@@ -474,6 +474,41 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
                     if (!empty($attrs['custom_fields'])) {
                         $custom = json_decode($attrs['custom_fields'], true) ?: [];
                     }
+                    // Dedup: Build list of standard field labels (DE + EN + common aliases)
+                    $mrh_pa_std_labels = [];
+                    if (class_exists('MrhProductAttributes')) {
+                        foreach (MrhProductAttributes::STANDARD_FIELDS as $sf_key => $sf_meta) {
+                            $mrh_pa_std_labels[] = mb_strtolower(trim($sf_meta[0])); // DE
+                            $mrh_pa_std_labels[] = mb_strtolower(trim($sf_meta[1])); // EN
+                        }
+                    }
+                    // Add common aliases that map to standard fields
+                    $mrh_pa_std_labels = array_merge($mrh_pa_std_labels, [
+                        'geschlecht', 'gender', 'sorte', 'type', 'indica/sativa', 'sorte (indica/sativa)',
+                        'thc', 'thc-gehalt', 'thc gehalt', 'cbd', 'cbd-gehalt', 'cbd gehalt',
+                        'kreuzung', 'genetik', 'kreuzung / genetik', 'cross', 'genetics', 'cross/genetics',
+                        'bluetezeit', 'blütezeit', 'blütezeit indoor', 'flowering time', 'flowering',
+                        'ertrag indoor', 'yield indoor', 'ertrag outdoor', 'yield outdoor',
+                        'erntezeit', 'erntezeitpunkt', 'harvest time', 'harvest',
+                        'hoehe indoor', 'höhe indoor', 'height indoor', 'hoehe outdoor', 'höhe outdoor', 'height outdoor',
+                        'klima', 'climate', 'wirkung', 'effect', 'geschmack', 'taste', 'geschmack & aroma',
+                        'anbau', 'growing', 'bluetentyp', 'blütentyp', 'flowering type',
+                        'effekt', 'eigenschaften', 'aroma',
+                    ]);
+                    $mrh_pa_std_labels = array_unique($mrh_pa_std_labels);
+                    
+                    // Filter: skip custom fields that duplicate standard fields
+                    $custom_filtered = [];
+                    $ci_new = 0;
+                    foreach ($custom as $cf) {
+                        $cf_label_lower = mb_strtolower(trim($cf['label'] ?? ''));
+                        if (in_array($cf_label_lower, $mrh_pa_std_labels)) {
+                            continue; // Skip duplicate
+                        }
+                        $custom_filtered[$ci_new] = $cf;
+                        $ci_new++;
+                    }
+                    $custom = $custom_filtered;
                     foreach ($custom as $ci => $cf): ?>
                         <div class="mrh-pa-field-row mrh-pa-custom-row">
                             <div class="mrh-pa-field-input" style="width:180px;flex:none;">

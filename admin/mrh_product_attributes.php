@@ -103,19 +103,37 @@ if ($action === 'save_product' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             
-            // Custom fields
+            // Custom fields (with dedup: skip labels that match standard fields)
             if (isset($lang_data['custom']) && is_array($lang_data['custom'])) {
+                // Build dedup label list from standard fields
+                $std_labels_lower = [];
+                foreach (MrhProductAttributes::STANDARD_FIELDS as $sf_meta) {
+                    $std_labels_lower[] = mb_strtolower(trim($sf_meta[0])); // DE
+                    $std_labels_lower[] = mb_strtolower(trim($sf_meta[1])); // EN
+                }
+                $std_labels_lower = array_merge($std_labels_lower, [
+                    'geschlecht', 'gender', 'sorte', 'indica/sativa', 'sorte (indica/sativa)',
+                    'thc-gehalt', 'thc gehalt', 'cbd-gehalt', 'cbd gehalt',
+                    'kreuzung / genetik', 'genetik', 'cross/genetics',
+                    'bluetezeit', 'bluetezeit indoor', 'erntezeitpunkt',
+                    'hoehe indoor', 'hoehe outdoor', 'bluetentyp',
+                    'geschmack & aroma', 'effekt', 'eigenschaften', 'aroma',
+                ]);
+                $std_labels_lower = array_unique($std_labels_lower);
+                
                 $custom_fields = [];
                 foreach ($lang_data['custom'] as $cf) {
-                    if (!empty($cf['label']) || !empty($cf['value'])) {
-                        $custom_fields[] = [
-                            'label' => trim($cf['label'] ?? ''),
-                            'value' => trim($cf['value'] ?? ''),
-                        ];
-                    }
+                    $label = trim($cf['label'] ?? '');
+                    $value = trim($cf['value'] ?? '');
+                    if (empty($label) && empty($value)) continue;
+                    // Skip if label matches a standard field
+                    if (in_array(mb_strtolower($label), $std_labels_lower)) continue;
+                    $custom_fields[] = ['label' => $label, 'value' => $value];
                 }
                 if (!empty($custom_fields)) {
                     $data['custom_fields'] = $custom_fields;
+                } else {
+                    $data['custom_fields'] = '[]'; // Clear duplicates
                 }
             }
             

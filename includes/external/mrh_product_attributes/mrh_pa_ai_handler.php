@@ -91,9 +91,44 @@ class MrhPaAiHandler {
         // Parse AI response
         $ai_data = $result['data'];
         
-        // Save to primary language
+        // Map AI response to fields
         $save_data = self::mapAiResponseToFields($ai_data);
         $save_data['ai_confidence'] = $ai_data['confidence'] ?? 0.8;
+        
+        // DEDUP: Only fill fields that are currently empty
+        $existing = MrhProductAttributes::getAttributes($products_id, $primary_lid);
+        if ($existing) {
+            foreach (MrhProductAttributes::STANDARD_FIELDS as $sf_key => $sf_meta) {
+                if (!empty($existing[$sf_key]) && isset($save_data[$sf_key])) {
+                    unset($save_data[$sf_key]); // Don't overwrite existing data
+                }
+            }
+            // Don't overwrite existing custom fields
+            if (!empty($existing['custom_fields'])) {
+                $existing_cf = json_decode($existing['custom_fields'], true) ?: [];
+                if (!empty($existing_cf)) {
+                    $existing_labels = array_map(function($cf) {
+                        return mb_strtolower(trim($cf['label'] ?? ''));
+                    }, $existing_cf);
+                    // Filter AI custom fields: only add truly new ones
+                    if (isset($save_data['custom_fields']) && is_array($save_data['custom_fields'])) {
+                        $save_data['custom_fields'] = array_filter($save_data['custom_fields'], function($cf) use ($existing_labels) {
+                            return !in_array(mb_strtolower(trim($cf['label'] ?? '')), $existing_labels);
+                        });
+                        // Also filter out labels that match standard fields
+                        $std_labels = [];
+                        foreach (MrhProductAttributes::STANDARD_FIELDS as $sf_meta) {
+                            $std_labels[] = mb_strtolower(trim($sf_meta[0]));
+                            $std_labels[] = mb_strtolower(trim($sf_meta[1]));
+                        }
+                        $save_data['custom_fields'] = array_filter($save_data['custom_fields'], function($cf) use ($std_labels) {
+                            return !in_array(mb_strtolower(trim($cf['label'] ?? '')), $std_labels);
+                        });
+                        $save_data['custom_fields'] = array_values($save_data['custom_fields']);
+                    }
+                }
+            }
+        }
         
         MrhProductAttributes::saveAttributes($products_id, $primary_lid, $save_data, 'ai');
         
