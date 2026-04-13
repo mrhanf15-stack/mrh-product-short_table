@@ -4,7 +4,7 @@
  * Autoinclude: ~/lang/french/extra/admin/
  *
  * @package MRH_Product_Attributes
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 defined('_VALID_XTC') or die('Direct Access to this location is not allowed.');
@@ -76,7 +76,7 @@ define('MRH_PA_BUTTON_AI_TRANSLATE', 'Traduction IA');
 define('MRH_PA_BUTTON_ADD_FIELD', 'Ajouter un champ');
 define('MRH_PA_BUTTON_REMOVE_FIELD', 'Supprimer le champ');
 define('MRH_PA_BUTTON_MIGRATE_ALL', 'Migrer tous les produits');
-define('MRH_PA_BUTTON_MIGRATE_AI', 'Compléter les incomplets par IA');
+define('MRH_PA_BUTTON_MIGRATE_AI', 'Démarrer le lot IA');
 define('MRH_PA_BUTTON_CANCEL', 'Annuler');
 
 // Messages
@@ -118,3 +118,38 @@ define('MRH_PA_PRODUCT_TAB', 'Propriétés (MRH)');
 define('MRH_PA_PRODUCT_IS_SEED', 'Est un produit semence');
 define('MRH_PA_PRODUCT_IS_SEED_YES', 'Oui (Graines)');
 define('MRH_PA_PRODUCT_IS_SEED_NO', 'Non (Non-semence)');
+
+// v1.1.0: Icon Editor / Pictos
+define('MRH_PA_PICTOS_HEADING', 'Icônes Picto (Badges)');
+define('MRH_PA_PICTOS_QUICKPICK', 'Sélection rapide');
+define('MRH_PA_PICTOS_CUSTOM_ADD', 'Ajouter une icône personnalisée');
+define('MRH_PA_PICTOS_ICON_CLASS', 'Classe icône');
+define('MRH_PA_PICTOS_TITLE', 'Titre');
+define('MRH_PA_PICTOS_COLOR', 'Couleur');
+define('MRH_PA_PICTOS_SIZE', 'Taille');
+define('MRH_PA_PICTOS_SIZE_NORMAL', 'Normal');
+define('MRH_PA_PICTOS_SIZE_MEDIUM', 'Moyen');
+define('MRH_PA_PICTOS_SIZE_LARGE', 'Grand');
+define('MRH_PA_PICTOS_SIZE_XLARGE', 'Très grand');
+define('MRH_PA_PICTOS_EMPTY', 'Aucune icône. Choisissez ci-dessous ou ajoutez des personnalisées.');
+define('MRH_PA_PICTOS_ADD_BTN', 'Ajouter');
+define('MRH_PA_PICTOS_REMOVE', 'Supprimer');
+
+// v1.1.0: Cannabis Cup
+define('MRH_PA_CUPS_HEADING', 'Récompenses Cannabis Cup');
+define('MRH_PA_CUPS_COUNT', 'Nombre de trophées');
+define('MRH_PA_CUPS_AWARD', 'Prix Cannabis Cup');
+define('MRH_PA_CUPS_AWARDS', 'Prix Cannabis Cup');
+
+// v1.1.0: AI Batch
+define('MRH_PA_AI_BATCH_HEADING', 'Remplissage IA par lot');
+define('MRH_PA_AI_BATCH_DESC', 'Remplit les produits avec moins de champs remplis que le seuil via analyse IA.');
+define('MRH_PA_AI_BATCH_SIZE', 'Taille du lot');
+define('MRH_PA_AI_BATCH_MIN_FIELDS', 'Champs min.');
+define('MRH_PA_AI_BATCH_CHECK', 'Vérifier');
+define('MRH_PA_AI_BATCH_START', 'Démarrer le lot IA');
+define('MRH_PA_AI_BATCH_STOP', 'Arrêter');
+define('MRH_PA_AI_BATCH_COUNTING', 'Comptage des produits...');
+define('MRH_PA_AI_BATCH_STARTED', 'Lot IA démarré...');
+define('MRH_PA_AI_BATCH_FINISHED', 'Tous les produits traités !');
+define('MRH_PA_AI_BATCH_STOPPED', 'Arrêté par l\'utilisateur.');

@@ -6,7 +6,7 @@
  * for structured product attributes (gender, THC, CBD, cross, etc.)
  *
  * @package MRH_Product_Attributes
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 defined('_VALID_XTC') or die('Direct Access to this location is not allowed.');
@@ -14,7 +14,7 @@ defined('_VALID_XTC') or die('Direct Access to this location is not allowed.');
 class MrhProductAttributes {
     
     /** @var string Module version */
-    const VERSION = '1.0.0';
+    const VERSION = '1.1.0';
     
     /** @var string DB table name */
     const TABLE = 'mrh_product_attributes';
@@ -24,9 +24,6 @@ class MrhProductAttributes {
      * Standard fields with their metadata.
      * key => [label_de, label_en, type, priority_level, field_order, tr_class]
      * priority_level: 1 = Prio, 2 = Alt-Prio (Fallback), 0 = Normal
-     *
-     * Prio-Felder (immer bevorzugt): Sorte, THC, CBD
-     * Alt-Prio (Fallback wenn Prio leer): Bluetezeit, Ertrag Indoor, Erntezeit, Kreuzung
      */
     const STANDARD_FIELDS = [
         'gender'         => ['Geschlecht', 'Gender', 'select', 0, 1, 'fem,reg'],
@@ -47,26 +44,17 @@ class MrhProductAttributes {
         'growing'        => ['Anbau', 'Growing', 'select', 0, 16, 'anbau'],
     ];
     
-    /**
-     * Gender options
-     */
     const GENDER_OPTIONS = [
         'feminized'  => ['Feminisiert', 'Feminized', 'Féminisée', 'Feminizada'],
         'regular'    => ['Regulaer', 'Regular', 'Régulière', 'Regular'],
         'autoflower' => ['Autoflowering', 'Autoflowering', 'Autofloraison', 'Autofloreciente'],
     ];
     
-    /**
-     * Flowering type options
-     */
     const FLOWERING_TYPE_OPTIONS = [
         'photoperiod'  => ['Photoperiodisch', 'Photoperiod', 'Photopériode', 'Fotoperíodo'],
         'autoflower'   => ['Autoflowering', 'Autoflowering', 'Autofloraison', 'Autofloreciente'],
     ];
     
-    /**
-     * Type options (Indica/Sativa)
-     */
     const TYPE_OPTIONS = [
         'indica'        => ['Indica', 'Indica', 'Indica', 'Indica'],
         'sativa'        => ['Sativa', 'Sativa', 'Sativa', 'Sativa'],
@@ -75,9 +63,6 @@ class MrhProductAttributes {
         'sativa_dom'    => ['Sativa-dominant', 'Sativa Dominant', 'Sativa dominante', 'Sativa dominante'],
     ];
     
-    /**
-     * Growing options
-     */
     const GROWING_OPTIONS = [
         'indoor'     => ['Indoor', 'Indoor', 'Intérieur', 'Interior'],
         'outdoor'    => ['Outdoor', 'Outdoor', 'Extérieur', 'Exterior'],
@@ -90,19 +75,14 @@ class MrhProductAttributes {
     
     /**
      * Check if the module tables exist and install if needed.
-     * Called on every admin page load via autoinclude.
-     *
-     * @return bool True if tables exist (or were just created)
      */
     public static function checkAndInstall() {
-        // Check if main table exists
         $check = xtc_db_query("SHOW TABLES LIKE '" . self::TABLE . "'");
         if (xtc_db_num_rows($check) == 0) {
             self::installTables();
             return true;
         }
         
-        // Check version and run migrations if needed
         $config_check = xtc_db_query("SHOW TABLES LIKE '" . self::CONFIG_TABLE . "'");
         if (xtc_db_num_rows($config_check) > 0) {
             $version_q = xtc_db_query("SELECT config_value FROM " . self::CONFIG_TABLE . " WHERE config_key = 'module_version'");
@@ -121,7 +101,6 @@ class MrhProductAttributes {
      * Install the database tables.
      */
     private static function installTables() {
-        // Main attributes table: one row per product per language
         xtc_db_query("CREATE TABLE IF NOT EXISTS `" . self::TABLE . "` (
             `id` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
             `products_id` INT(11) NOT NULL,
@@ -142,6 +121,8 @@ class MrhProductAttributes {
             `effect` VARCHAR(512) DEFAULT NULL,
             `taste` VARCHAR(512) DEFAULT NULL,
             `growing` VARCHAR(64) DEFAULT NULL COMMENT 'indoor|outdoor|greenhouse|all',
+            `pictos` TEXT DEFAULT NULL COMMENT 'JSON: [{icon,color,size,title}]',
+            `cannabis_cups` TINYINT(3) UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Number of Cannabis Cup awards',
             `custom_fields` TEXT DEFAULT NULL COMMENT 'JSON: additional user-defined fields',
             `is_seed` TINYINT(1) NOT NULL DEFAULT 1 COMMENT '1=seed product, 0=non-seed',
             `data_source` ENUM('manual','migration','ai','import') NOT NULL DEFAULT 'manual',
@@ -158,7 +139,6 @@ class MrhProductAttributes {
             KEY `idx_data_source` (`data_source`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
         
-        // Config table for module settings
         xtc_db_query("CREATE TABLE IF NOT EXISTS `" . self::CONFIG_TABLE . "` (
             `config_key` VARCHAR(64) NOT NULL,
             `config_value` TEXT DEFAULT NULL,
@@ -166,7 +146,6 @@ class MrhProductAttributes {
             PRIMARY KEY (`config_key`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;");
         
-        // Insert default config values
         xtc_db_query("INSERT INTO `" . self::CONFIG_TABLE . "` (`config_key`, `config_value`) VALUES
             ('module_version', '" . self::VERSION . "'),
             ('openai_api_key', ''),
@@ -183,24 +162,25 @@ class MrhProductAttributes {
     
     /**
      * Run database migrations between versions.
-     *
-     * @param string $from_version Current installed version
      */
     private static function runMigrations($from_version) {
-        // Future migrations go here
-        // Example:
-        // if (version_compare($from_version, '1.1.0', '<')) {
-        //     xtc_db_query("ALTER TABLE ...");
-        // }
+        // v1.1.0: Add pictos JSON + cannabis_cups fields
+        if (version_compare($from_version, '1.1.0', '<')) {
+            $col_check = xtc_db_query("SHOW COLUMNS FROM " . self::TABLE . " LIKE 'pictos'");
+            if (xtc_db_num_rows($col_check) == 0) {
+                xtc_db_query("ALTER TABLE " . self::TABLE . " ADD COLUMN `pictos` TEXT DEFAULT NULL COMMENT 'JSON: [{icon,color,size,title}]' AFTER `growing`");
+            }
+            $col_check2 = xtc_db_query("SHOW COLUMNS FROM " . self::TABLE . " LIKE 'cannabis_cups'");
+            if (xtc_db_num_rows($col_check2) == 0) {
+                xtc_db_query("ALTER TABLE " . self::TABLE . " ADD COLUMN `cannabis_cups` TINYINT(3) UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Number of Cannabis Cup awards' AFTER `pictos`");
+            }
+        }
         
-        // Update version
         xtc_db_query("UPDATE " . self::CONFIG_TABLE . " SET config_value = '" . self::VERSION . "' WHERE config_key = 'module_version'");
     }
     
     /**
      * Get the language map (code => id).
-     *
-     * @return array
      */
     public static function getLanguageMap() {
         if (self::$language_map === null) {
@@ -215,10 +195,6 @@ class MrhProductAttributes {
     
     /**
      * Get attributes for a product (single language).
-     *
-     * @param int $products_id
-     * @param int $language_id
-     * @return array|null
      */
     public static function getAttributes($products_id, $language_id = 0) {
         if ($language_id == 0) {
@@ -232,9 +208,11 @@ class MrhProductAttributes {
         
         if (xtc_db_num_rows($q) > 0) {
             $row = xtc_db_fetch_array($q);
-            // Decode custom_fields JSON
             if (!empty($row['custom_fields'])) {
                 $row['custom_fields_decoded'] = json_decode($row['custom_fields'], true);
+            }
+            if (!empty($row['pictos'])) {
+                $row['pictos_decoded'] = json_decode($row['pictos'], true);
             }
             return $row;
         }
@@ -244,9 +222,6 @@ class MrhProductAttributes {
     
     /**
      * Get attributes for a product (all languages).
-     *
-     * @param int $products_id
-     * @return array [language_id => attributes]
      */
     public static function getAllLanguageAttributes($products_id) {
         $result = [];
@@ -258,6 +233,9 @@ class MrhProductAttributes {
             if (!empty($row['custom_fields'])) {
                 $row['custom_fields_decoded'] = json_decode($row['custom_fields'], true);
             }
+            if (!empty($row['pictos'])) {
+                $row['pictos_decoded'] = json_decode($row['pictos'], true);
+            }
             $result[(int)$row['language_id']] = $row;
         }
         
@@ -267,26 +245,18 @@ class MrhProductAttributes {
     /**
      * Save attributes for a product (single language).
      * Uses INSERT ... ON DUPLICATE KEY UPDATE for upsert.
-     *
-     * @param int $products_id
-     * @param int $language_id
-     * @param array $data Key-value pairs of fields
-     * @param string $source Data source (manual|migration|ai|import)
-     * @return bool
      */
     public static function saveAttributes($products_id, $language_id, $data, $source = 'manual') {
         $products_id = (int)$products_id;
         $language_id = (int)$language_id;
         
-        // Allowed DB columns
         $allowed = [
             'gender', 'flowering_type', 'cross_genetics', 'thc', 'cbd', 'type',
             'yield_indoor', 'yield_outdoor', 'height_indoor', 'height_outdoor',
             'flowering_time', 'harvest_time', 'climate', 'effect', 'taste',
-            'growing', 'custom_fields', 'is_seed', 'ai_confidence'
+            'growing', 'pictos', 'cannabis_cups', 'custom_fields', 'is_seed', 'ai_confidence'
         ];
         
-        // Filter and escape data
         $fields = ['products_id' => $products_id, 'language_id' => $language_id];
         $fields_filled = 0;
         
@@ -296,8 +266,11 @@ class MrhProductAttributes {
                 if ($col === 'custom_fields' && is_array($val)) {
                     $val = json_encode($val, JSON_UNESCAPED_UNICODE);
                 }
+                if ($col === 'pictos' && is_array($val)) {
+                    $val = json_encode($val, JSON_UNESCAPED_UNICODE);
+                }
                 $fields[$col] = xtc_db_input($val);
-                if (!empty($val) && $col !== 'is_seed' && $col !== 'ai_confidence' && $col !== 'custom_fields') {
+                if (!empty($val) && $col !== 'is_seed' && $col !== 'ai_confidence' && $col !== 'custom_fields' && $col !== 'pictos' && $col !== 'cannabis_cups') {
                     $fields_filled++;
                 }
             }
@@ -349,9 +322,6 @@ class MrhProductAttributes {
     
     /**
      * Delete attributes for a product (all languages).
-     *
-     * @param int $products_id
-     * @return bool
      */
     public static function deleteAttributes($products_id) {
         xtc_db_query("DELETE FROM " . self::TABLE . " WHERE products_id = " . (int)$products_id);
@@ -360,10 +330,6 @@ class MrhProductAttributes {
     
     /**
      * Get a config value.
-     *
-     * @param string $key
-     * @param mixed $default
-     * @return mixed
      */
     public static function getConfig($key, $default = null) {
         $q = xtc_db_query("SELECT config_value FROM " . self::CONFIG_TABLE . " 
@@ -377,10 +343,6 @@ class MrhProductAttributes {
     
     /**
      * Set a config value.
-     *
-     * @param string $key
-     * @param string $value
-     * @return bool
      */
     public static function setConfig($key, $value) {
         xtc_db_query("INSERT INTO " . self::CONFIG_TABLE . " (config_key, config_value) 
@@ -391,9 +353,6 @@ class MrhProductAttributes {
     
     /**
      * Count products with attributes.
-     *
-     * @param int $min_fields Minimum filled fields
-     * @return int
      */
     public static function countProducts($min_fields = 0) {
         $sql = "SELECT COUNT(DISTINCT products_id) as cnt FROM " . self::TABLE;
@@ -407,31 +366,23 @@ class MrhProductAttributes {
     
     /**
      * Get migration statistics.
-     *
-     * @return array
      */
     public static function getMigrationStats() {
         $stats = [];
         
-        // Total products in shop
         $q = xtc_db_query("SELECT COUNT(*) as cnt FROM products WHERE products_status = 1");
         $row = xtc_db_fetch_array($q);
         $stats['total_active_products'] = (int)$row['cnt'];
         
-        // Products with attributes
         $stats['products_with_attributes'] = self::countProducts();
-        
-        // Products with >= 3 fields
         $stats['products_with_3plus_fields'] = self::countProducts(3);
         
-        // By source
         foreach (['manual', 'migration', 'ai', 'import'] as $source) {
             $q = xtc_db_query("SELECT COUNT(DISTINCT products_id) as cnt FROM " . self::TABLE . " WHERE data_source = '" . $source . "'");
             $row = xtc_db_fetch_array($q);
             $stats['source_' . $source] = (int)$row['cnt'];
         }
         
-        // Migration status
         $stats['migration_status'] = self::getConfig('migration_status', 'idle');
         $stats['migration_last_id'] = (int)self::getConfig('migration_last_id', 0);
         
@@ -440,19 +391,9 @@ class MrhProductAttributes {
     
     /**
      * Build a mini-table HTML from structured attributes.
-     * Used in listings, boxes, seedfinder, compare.
-     *
+     * 
      * LISTING/BOX context: Always exactly 3 rows.
-     * - Prio-Felder (priority_level=1): Sorte, THC, CBD
-     * - Alt-Prio (priority_level=2): Bluetezeit, Ertrag Indoor, Erntezeit, Kreuzung
-     * - If a Prio field is empty, fill with next available Alt-Prio field
-     * - If still empty, show placeholder '—'
-     *
      * DETAIL context: Show all filled fields (no 3-row limit).
-     *
-     * @param array $attrs Attributes row from DB
-     * @param string $context 'listing'|'box'|'seedfinder'|'compare'|'detail'
-     * @return string HTML
      */
     public static function buildMiniTable($attrs, $context = 'listing') {
         if (empty($attrs)) return '';
@@ -496,14 +437,12 @@ class MrhProductAttributes {
         }
         
         // LISTING/BOX context: Always exactly 3 rows
-        // Prio fields in order: Sorte, THC, CBD
         $prio_fields = [
             ['key' => 'type',  'label_key' => 'type'],
             ['key' => 'thc',   'label_key' => 'thc'],
             ['key' => 'cbd',   'label_key' => 'cbd'],
         ];
         
-        // Alt-Prio fields (fallback pool): Bluetezeit, Ertrag Indoor, Erntezeit, Kreuzung
         $alt_prio_fields = [
             ['key' => 'flowering_time',  'label_key' => 'flowering_time'],
             ['key' => 'yield_indoor',    'label_key' => 'yield_indoor'],
@@ -511,16 +450,14 @@ class MrhProductAttributes {
             ['key' => 'cross_genetics',  'label_key' => 'cross'],
         ];
         
-        // Build the 3 rows
         $rows = [];
-        $alt_idx = 0; // Pointer into alt-prio pool
+        $alt_idx = 0;
         
         foreach ($prio_fields as $pf) {
             $db_field = $pf['key'];
             $label_key = $pf['label_key'];
             $value_raw = $attrs[$db_field] ?? '';
             
-            // If prio field is empty, try alt-prio fields
             if (empty(trim($value_raw))) {
                 $found_alt = false;
                 while ($alt_idx < count($alt_prio_fields)) {
@@ -528,7 +465,6 @@ class MrhProductAttributes {
                     $alt_val = $attrs[$af['key']] ?? '';
                     $alt_idx++;
                     if (!empty(trim($alt_val))) {
-                        // Use this alt-prio field instead
                         $db_field = $af['key'];
                         $label_key = $af['label_key'];
                         $value_raw = $alt_val;
@@ -538,7 +474,6 @@ class MrhProductAttributes {
                 }
                 
                 if (!$found_alt) {
-                    // No alt-prio available: show placeholder
                     $label = isset($field_labels[$pf['label_key']]) ? $field_labels[$pf['label_key']][0] : ucfirst($pf['key']);
                     $tr_class = isset($field_labels[$pf['label_key']]) ? $field_labels[$pf['label_key']][5] : '';
                     $rows[] = '<tr class="' . htmlspecialchars($tr_class) . '"><td>' . htmlspecialchars($label) . '</td><td>&mdash;</td></tr>';
@@ -546,7 +481,6 @@ class MrhProductAttributes {
                 }
             }
             
-            // Render the row
             $value = htmlspecialchars($value_raw);
             if (in_array($db_field, ['gender', 'flowering_type', 'type', 'growing'])) {
                 $value = self::translateSelectValue($db_field, $value_raw);
@@ -562,10 +496,6 @@ class MrhProductAttributes {
     
     /**
      * Translate a select field value to the current language.
-     *
-     * @param string $field
-     * @param string $value
-     * @return string
      */
     private static function translateSelectValue($field, $value) {
         $lang_idx = 0; // Default: German
@@ -590,11 +520,18 @@ class MrhProductAttributes {
     
     /**
      * Build badge HTML from structured attributes.
+     * 
+     * Now renders:
+     * 1. Gender badge (feminized/regular)
+     * 2. Flowering type badge (autoflower/photoperiod)
+     * 3. Custom picto icons from DB (with color and size)
+     * 4. Cannabis Cup trophy badge (with count)
+     *
      * Uses the original configurator structure:
      * <span class="picto templatestyle">
      *   <span class="mrh-badge-bar">
-     *     <span class="mrh-type-badge mrh-badge-fem" title="Feminisiert">
-     *       <span class="fa fa-fw fa-venus"></span>
+     *     <span class="mrh-type-badge mrh-badge-xxx" title="...">
+     *       <span class="fa fa-fw fa-xxx"></span>
      *     </span>
      *   </span>
      * </span>
@@ -609,20 +546,76 @@ class MrhProductAttributes {
         $gender = $attrs['gender'] ?? '';
         $flowering = $attrs['flowering_type'] ?? '';
         
-        // Gender badge
+        // 1. Gender badge
         if ($gender === 'feminized') {
             $badges[] = self::badgeSpan('fem', 'fa-venus', self::translateSelectValue('gender', 'feminized'));
         } elseif ($gender === 'regular') {
-            $badges[] = self::badgeSpan('reg', 'fa-mars-and-venus', self::translateSelectValue('gender', 'regular'));
+            $badges[] = self::badgeSpan('reg', 'fa-mars', self::translateSelectValue('gender', 'regular'));
         } elseif ($gender === 'autoflower') {
             $badges[] = self::badgeSpan('fem', 'fa-venus', self::translateSelectValue('gender', 'autoflower'));
         }
         
-        // Flowering type badge
+        // 2. Flowering type badge
         if ($flowering === 'autoflower') {
             $badges[] = self::badgeSpan('auto', 'fa-bolt', self::translateSelectValue('flowering_type', 'autoflower'));
         } elseif ($flowering === 'photoperiod') {
-            $badges[] = self::badgeSpan('photo', 'fa-sun', self::translateSelectValue('flowering_type', 'photoperiod'));
+            $badges[] = self::badgeSpan('photo', 'fa-sun-o', self::translateSelectValue('flowering_type', 'photoperiod'));
+        }
+        
+        // 3. Custom picto icons from DB
+        $pictos = [];
+        if (!empty($attrs['pictos'])) {
+            $pictos = is_array($attrs['pictos']) ? $attrs['pictos'] : (json_decode($attrs['pictos'], true) ?: []);
+        } elseif (!empty($attrs['pictos_decoded'])) {
+            $pictos = $attrs['pictos_decoded'];
+        }
+        
+        if (!empty($pictos)) {
+            foreach ($pictos as $picto) {
+                $icon_class = $picto['icon'] ?? '';
+                $color = $picto['color'] ?? '#333';
+                $size = $picto['size'] ?? '1em';
+                $title = $picto['title'] ?? '';
+                
+                if (empty($icon_class)) continue;
+                
+                // Normalize icon class: ensure it starts with fa-
+                if (strpos($icon_class, 'fa-') === false && strpos($icon_class, 'fa ') === false) {
+                    $icon_class = 'fa-' . $icon_class;
+                }
+                // Remove "fa " prefix if present (we add it in the span)
+                $icon_class = str_replace('fa ', '', $icon_class);
+                
+                // Skip icons that duplicate the gender/flowering badges
+                if (in_array($icon_class, ['fa-venus', 'fa-mars', 'fa-bolt', 'fa-sun-o'])) continue;
+                
+                $style = '';
+                if ($color && $color !== '#333333' && $color !== '#333') {
+                    $style .= 'color:' . htmlspecialchars($color) . ';';
+                }
+                if ($size && $size !== '1em') {
+                    $style .= 'font-size:' . htmlspecialchars($size) . ';';
+                }
+                
+                $badges[] = '<span class="mrh-type-badge mrh-badge-picto" title="' . htmlspecialchars($title) . '"' .
+                    ($style ? ' style="' . $style . '"' : '') . '>' .
+                    '<span class="fa fa-fw ' . htmlspecialchars($icon_class) . '"></span>' .
+                    '</span>';
+            }
+        }
+        
+        // 4. Cannabis Cup trophy badge
+        $cups = (int)($attrs['cannabis_cups'] ?? 0);
+        if ($cups > 0) {
+            $cup_title = $cups . ' Cannabis Cup' . ($cups > 1 ? ' Awards' : ' Award');
+            $cup_html = '<span class="mrh-type-badge mrh-badge-cup" title="' . htmlspecialchars($cup_title) . '">';
+            // Show trophy icon with count
+            $cup_html .= '<span class="fa fa-fw fa-trophy"></span>';
+            if ($cups > 1) {
+                $cup_html .= '<span class="mrh-cup-count">' . $cups . '</span>';
+            }
+            $cup_html .= '</span>';
+            $badges[] = $cup_html;
         }
         
         if (empty($badges)) return '';
@@ -634,11 +627,6 @@ class MrhProductAttributes {
     
     /**
      * Build a single badge span.
-     *
-     * @param string $type Badge type class suffix (fem|reg|auto|photo)
-     * @param string $icon Font Awesome icon class
-     * @param string $title Title/tooltip text
-     * @return string HTML
      */
     private static function badgeSpan($type, $icon, $title) {
         return '<span class="mrh-type-badge mrh-badge-' . $type . '" title="' . htmlspecialchars($title) . '">'
@@ -648,13 +636,8 @@ class MrhProductAttributes {
     
     /**
      * Check if a product is a seed product.
-     * Uses categories_id to determine (seeds are in specific categories).
-     *
-     * @param int $products_id
-     * @return bool
      */
     public static function isSeedProduct($products_id) {
-        // First check if we have explicit data
         $q = xtc_db_query("SELECT is_seed FROM " . self::TABLE . " 
             WHERE products_id = " . (int)$products_id . " LIMIT 1");
         if (xtc_db_num_rows($q) > 0) {
@@ -662,8 +645,6 @@ class MrhProductAttributes {
             return (bool)$row['is_seed'];
         }
         
-        // Fallback: check if short description contains a seed table
-        // This will be used during migration
         return null; // Unknown
     }
 }

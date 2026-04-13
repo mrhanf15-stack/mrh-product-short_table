@@ -4,7 +4,7 @@
  * Autoinclude: ~/lang/spanish/extra/admin/
  *
  * @package MRH_Product_Attributes
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 defined('_VALID_XTC') or die('Direct Access to this location is not allowed.');
@@ -76,7 +76,7 @@ define('MRH_PA_BUTTON_AI_TRANSLATE', 'Traducción IA');
 define('MRH_PA_BUTTON_ADD_FIELD', 'Añadir campo');
 define('MRH_PA_BUTTON_REMOVE_FIELD', 'Eliminar campo');
 define('MRH_PA_BUTTON_MIGRATE_ALL', 'Migrar todos los productos');
-define('MRH_PA_BUTTON_MIGRATE_AI', 'Completar incompletos con IA');
+define('MRH_PA_BUTTON_MIGRATE_AI', 'Iniciar lote IA');
 define('MRH_PA_BUTTON_CANCEL', 'Cancelar');
 
 // Messages
@@ -118,3 +118,38 @@ define('MRH_PA_PRODUCT_TAB', 'Propiedades (MRH)');
 define('MRH_PA_PRODUCT_IS_SEED', 'Es producto de semillas');
 define('MRH_PA_PRODUCT_IS_SEED_YES', 'Sí (Semillas)');
 define('MRH_PA_PRODUCT_IS_SEED_NO', 'No (No-semilla)');
+
+// v1.1.0: Icon Editor / Pictos
+define('MRH_PA_PICTOS_HEADING', 'Iconos Picto (Insignias)');
+define('MRH_PA_PICTOS_QUICKPICK', 'Selección rápida');
+define('MRH_PA_PICTOS_CUSTOM_ADD', 'Añadir icono personalizado');
+define('MRH_PA_PICTOS_ICON_CLASS', 'Clase de icono');
+define('MRH_PA_PICTOS_TITLE', 'Título');
+define('MRH_PA_PICTOS_COLOR', 'Color');
+define('MRH_PA_PICTOS_SIZE', 'Tamaño');
+define('MRH_PA_PICTOS_SIZE_NORMAL', 'Normal');
+define('MRH_PA_PICTOS_SIZE_MEDIUM', 'Mediano');
+define('MRH_PA_PICTOS_SIZE_LARGE', 'Grande');
+define('MRH_PA_PICTOS_SIZE_XLARGE', 'Muy grande');
+define('MRH_PA_PICTOS_EMPTY', 'Sin iconos. Elija de abajo o añada personalizados.');
+define('MRH_PA_PICTOS_ADD_BTN', 'Añadir');
+define('MRH_PA_PICTOS_REMOVE', 'Eliminar');
+
+// v1.1.0: Cannabis Cup
+define('MRH_PA_CUPS_HEADING', 'Premios Cannabis Cup');
+define('MRH_PA_CUPS_COUNT', 'Número de trofeos');
+define('MRH_PA_CUPS_AWARD', 'Premio Cannabis Cup');
+define('MRH_PA_CUPS_AWARDS', 'Premios Cannabis Cup');
+
+// v1.1.0: AI Batch
+define('MRH_PA_AI_BATCH_HEADING', 'Relleno IA por lotes');
+define('MRH_PA_AI_BATCH_DESC', 'Rellena productos con menos campos que el umbral mediante análisis IA.');
+define('MRH_PA_AI_BATCH_SIZE', 'Tamaño del lote');
+define('MRH_PA_AI_BATCH_MIN_FIELDS', 'Campos mín.');
+define('MRH_PA_AI_BATCH_CHECK', 'Verificar');
+define('MRH_PA_AI_BATCH_START', 'Iniciar lote IA');
+define('MRH_PA_AI_BATCH_STOP', 'Detener');
+define('MRH_PA_AI_BATCH_COUNTING', 'Contando productos...');
+define('MRH_PA_AI_BATCH_STARTED', 'Lote IA iniciado...');
+define('MRH_PA_AI_BATCH_FINISHED', '¡Todos los productos procesados!');
+define('MRH_PA_AI_BATCH_STOPPED', 'Detenido por el usuario.');

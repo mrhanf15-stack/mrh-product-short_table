@@ -4,7 +4,7 @@
  * Autoinclude: ~/lang/german/extra/admin/
  *
  * @package MRH_Product_Attributes
- * @version 1.0.0
+ * @version 1.1.0
  */
 
 defined('_VALID_XTC') or die('Direct Access to this location is not allowed.');
@@ -76,7 +76,7 @@ define('MRH_PA_BUTTON_AI_TRANSLATE', 'KI-Uebersetzung');
 define('MRH_PA_BUTTON_ADD_FIELD', 'Feld hinzufuegen');
 define('MRH_PA_BUTTON_REMOVE_FIELD', 'Feld entfernen');
 define('MRH_PA_BUTTON_MIGRATE_ALL', 'Alle Produkte migrieren');
-define('MRH_PA_BUTTON_MIGRATE_AI', 'Unvollstaendige per KI ergaenzen');
+define('MRH_PA_BUTTON_MIGRATE_AI', 'KI-Batch starten');
 define('MRH_PA_BUTTON_CANCEL', 'Abbrechen');
 
 // Messages
@@ -118,3 +118,38 @@ define('MRH_PA_PRODUCT_TAB', 'Eigenschaften (MRH)');
 define('MRH_PA_PRODUCT_IS_SEED', 'Ist Saatgut-Produkt');
 define('MRH_PA_PRODUCT_IS_SEED_YES', 'Ja (Samen)');
 define('MRH_PA_PRODUCT_IS_SEED_NO', 'Nein (Non-Seed)');
+
+// v1.1.0: Icon Editor / Pictos
+define('MRH_PA_PICTOS_HEADING', 'Picto-Icons (Badges)');
+define('MRH_PA_PICTOS_QUICKPICK', 'Schnellauswahl');
+define('MRH_PA_PICTOS_CUSTOM_ADD', 'Eigenes Icon hinzufuegen');
+define('MRH_PA_PICTOS_ICON_CLASS', 'Icon-Klasse');
+define('MRH_PA_PICTOS_TITLE', 'Titel');
+define('MRH_PA_PICTOS_COLOR', 'Farbe');
+define('MRH_PA_PICTOS_SIZE', 'Groesse');
+define('MRH_PA_PICTOS_SIZE_NORMAL', 'Normal');
+define('MRH_PA_PICTOS_SIZE_MEDIUM', 'Mittel');
+define('MRH_PA_PICTOS_SIZE_LARGE', 'Gross');
+define('MRH_PA_PICTOS_SIZE_XLARGE', 'Sehr gross');
+define('MRH_PA_PICTOS_EMPTY', 'Keine Icons. Waehlen Sie unten aus oder fuegen Sie eigene hinzu.');
+define('MRH_PA_PICTOS_ADD_BTN', 'Hinzufuegen');
+define('MRH_PA_PICTOS_REMOVE', 'Entfernen');
+
+// v1.1.0: Cannabis Cup
+define('MRH_PA_CUPS_HEADING', 'Cannabis Cup Auszeichnungen');
+define('MRH_PA_CUPS_COUNT', 'Anzahl Pokale');
+define('MRH_PA_CUPS_AWARD', 'Cannabis Cup Award');
+define('MRH_PA_CUPS_AWARDS', 'Cannabis Cup Awards');
+
+// v1.1.0: AI Batch
+define('MRH_PA_AI_BATCH_HEADING', 'KI-Nachbefuellung');
+define('MRH_PA_AI_BATCH_DESC', 'Ergaenzt Produkte mit weniger als dem Schwellenwert gefuellter Felder per KI-Analyse der Beschreibung.');
+define('MRH_PA_AI_BATCH_SIZE', 'Batch-Groesse');
+define('MRH_PA_AI_BATCH_MIN_FIELDS', 'Min. Felder');
+define('MRH_PA_AI_BATCH_CHECK', 'Pruefen');
+define('MRH_PA_AI_BATCH_START', 'KI-Batch starten');
+define('MRH_PA_AI_BATCH_STOP', 'Stoppen');
+define('MRH_PA_AI_BATCH_COUNTING', 'Zaehle Produkte...');
+define('MRH_PA_AI_BATCH_STARTED', 'KI-Batch gestartet...');
+define('MRH_PA_AI_BATCH_FINISHED', 'Alle Produkte verarbeitet!');
+define('MRH_PA_AI_BATCH_STOPPED', 'Gestoppt durch Benutzer.');
