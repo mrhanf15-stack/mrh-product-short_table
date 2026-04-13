@@ -1400,6 +1400,28 @@ function mrhPaGetFieldOrder() {
 }
 
 // ============================================================
+// HIDE OLD SHORT DESCRIPTION TEXTAREA
+// ============================================================
+function mrhPaHideOldShortDesc() {
+    // The old products_short_description textareas contain HTML tables
+    // with the same data. Hide them to avoid confusion.
+    var textareas = document.querySelectorAll('textarea[name^="products_short_description["]');
+    textareas.forEach(function(ta) {
+        // Find the parent container div
+        var container = ta.closest('div.main') || ta.parentElement;
+        if (container) {
+            // Check if there's a label before it
+            var prev = container.previousElementSibling;
+            container.style.display = 'none';
+            // Also hide the label div if it says "Kurzbeschreibung"
+            if (prev && prev.textContent && prev.textContent.indexOf('Kurzbeschreibung') !== -1) {
+                prev.style.display = 'none';
+            }
+        }
+    });
+}
+
+// ============================================================
 // INIT ON PAGE LOAD
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
@@ -1408,5 +1430,9 @@ document.addEventListener('DOMContentLoaded', function() {
     mrhPaAutoDetectPreset();
     mrhPaUpdateCupsPreview();
     mrhPaInitFieldDragDrop();
+    // Hide old short_description textareas if MRH data exists
+    if (mrhPaProductsId > 0) {
+        mrhPaHideOldShortDesc();
+    }
 });
 </script>

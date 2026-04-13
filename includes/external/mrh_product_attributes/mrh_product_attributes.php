@@ -6,7 +6,7 @@
  * for structured product attributes (gender, THC, CBD, cross, etc.)
  *
  * @package MRH_Product_Attributes
- * @version 1.3.0
+ * @version 1.4.0
  */
 
 if (!defined('_VALID_XTC')) { return; }
@@ -14,7 +14,7 @@ if (!defined('_VALID_XTC')) { return; }
 class MrhProductAttributes {
     
     /** @var string Module version */
-    const VERSION = '1.3.0';
+    const VERSION = '1.4.0';
     
     /** @var string DB table name */
     const TABLE = 'mrh_product_attributes';
@@ -406,6 +406,32 @@ class MrhProductAttributes {
             $all_fields = ['type', 'thc', 'cbd', 'cross_genetics', 'flowering_time', 
                 'yield_indoor', 'harvest_time', 'yield_outdoor', 'height_indoor', 
                 'height_outdoor', 'climate', 'effect', 'taste', 'growing'];
+            
+            // Apply custom field order if saved
+            $products_id = (int)($attrs['products_id'] ?? 0);
+            if ($products_id > 0) {
+                $saved_order_json = self::getConfig('field_order_' . $products_id);
+                if (!empty($saved_order_json)) {
+                    $saved_order = json_decode($saved_order_json, true);
+                    if (is_array($saved_order) && !empty($saved_order)) {
+                        // Filter to only include fields that are in our all_fields list
+                        // and add any missing fields at the end
+                        $ordered = [];
+                        foreach ($saved_order as $f) {
+                            if (in_array($f, $all_fields)) {
+                                $ordered[] = $f;
+                            }
+                        }
+                        // Add any fields not in saved order
+                        foreach ($all_fields as $f) {
+                            if (!in_array($f, $ordered)) {
+                                $ordered[] = $f;
+                            }
+                        }
+                        $all_fields = $ordered;
+                    }
+                }
+            }
             
             foreach ($all_fields as $field) {
                 $db_field = $field;
