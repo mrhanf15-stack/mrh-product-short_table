@@ -53,7 +53,18 @@ class MrhPaAiHandler {
         }
         
         // Use German description as primary source (or first available)
-        $primary_lid = 1; // German
+        // Find German language_id dynamically (not hardcoded)
+        $primary_lid = 0;
+        foreach ($languages as $lid => $lang) {
+            if ($lang['code'] === 'de') {
+                $primary_lid = $lid;
+                break;
+            }
+        }
+        // Fallback to first available language
+        if ($primary_lid == 0 || !isset($descriptions[$primary_lid])) {
+            $primary_lid = array_key_first($descriptions);
+        }
         $primary_desc = $descriptions[$primary_lid] ?? reset($descriptions);
         
         // Strip HTML but keep text content
