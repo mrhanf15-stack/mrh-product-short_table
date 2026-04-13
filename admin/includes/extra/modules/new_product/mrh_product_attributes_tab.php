@@ -59,6 +59,7 @@ while ($mrh_pa_lang_row = xtc_db_fetch_array($mrh_pa_lang_q)) {
 $mrh_pa_fields = [
     'gender'         => ['label' => defined('MRH_PA_FIELD_GENDER') ? MRH_PA_FIELD_GENDER : 'Geschlecht', 'type' => 'select', 'priority' => false],
     'flowering_type' => ['label' => defined('MRH_PA_FIELD_FLOWERING_TYPE') ? MRH_PA_FIELD_FLOWERING_TYPE : 'Bluetentyp', 'type' => 'select', 'priority' => false],
+    'growing'        => ['label' => defined('MRH_PA_FIELD_GROWING') ? MRH_PA_FIELD_GROWING : 'Anbau', 'type' => 'select', 'priority' => false],
     'type'           => ['label' => defined('MRH_PA_FIELD_TYPE') ? MRH_PA_FIELD_TYPE : 'Sorte', 'type' => 'select', 'priority' => 'prio'],
     'thc'            => ['label' => defined('MRH_PA_FIELD_THC') ? MRH_PA_FIELD_THC : 'THC', 'type' => 'text', 'priority' => 'prio'],
     'cbd'            => ['label' => defined('MRH_PA_FIELD_CBD') ? MRH_PA_FIELD_CBD : 'CBD', 'type' => 'text', 'priority' => 'prio'],
@@ -72,7 +73,6 @@ $mrh_pa_fields = [
     'climate'        => ['label' => defined('MRH_PA_FIELD_CLIMATE') ? MRH_PA_FIELD_CLIMATE : 'Klima', 'type' => 'text', 'priority' => false],
     'effect'         => ['label' => defined('MRH_PA_FIELD_EFFECT') ? MRH_PA_FIELD_EFFECT : 'Wirkung', 'type' => 'text', 'priority' => false],
     'taste'          => ['label' => defined('MRH_PA_FIELD_TASTE') ? MRH_PA_FIELD_TASTE : 'Geschmack', 'type' => 'text', 'priority' => false],
-    'growing'        => ['label' => defined('MRH_PA_FIELD_GROWING') ? MRH_PA_FIELD_GROWING : 'Anbau', 'type' => 'select', 'priority' => false],
 ];
 
 // Apply saved field order (if exists for this product)
@@ -81,6 +81,16 @@ if ($mrh_pa_products_id > 0 && class_exists('MrhProductAttributes')) {
     if ($mrh_pa_saved_order_json) {
         $mrh_pa_saved_order = json_decode($mrh_pa_saved_order_json, true);
         if (is_array($mrh_pa_saved_order) && !empty($mrh_pa_saved_order)) {
+            // Enforce: growing must always come before type in saved order
+            $grow_pos = array_search('growing', $mrh_pa_saved_order);
+            $type_pos = array_search('type', $mrh_pa_saved_order);
+            if ($grow_pos !== false && $type_pos !== false && $grow_pos > $type_pos) {
+                // Remove growing from old position and insert before type
+                array_splice($mrh_pa_saved_order, $grow_pos, 1);
+                $type_pos = array_search('type', $mrh_pa_saved_order);
+                array_splice($mrh_pa_saved_order, $type_pos, 0, ['growing']);
+            }
+            
             $mrh_pa_fields_ordered = [];
             // First: add fields in saved order
             foreach ($mrh_pa_saved_order as $key) {
