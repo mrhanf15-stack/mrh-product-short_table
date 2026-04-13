@@ -21,7 +21,7 @@
  * @version 1.5.0
  */
 
-if (!defined('_VALID_XTC')) { return; }
+if (!defined('TABLE_CONFIGURATION') && !defined('_VALID_XTC')) { return; }
 
 // Load module class
 if (!class_exists('MrhProductAttributes')) {
@@ -74,6 +74,30 @@ $mrh_pa_fields = [
     'taste'          => ['label' => defined('MRH_PA_FIELD_TASTE') ? MRH_PA_FIELD_TASTE : 'Geschmack', 'type' => 'text', 'priority' => false],
     'growing'        => ['label' => defined('MRH_PA_FIELD_GROWING') ? MRH_PA_FIELD_GROWING : 'Anbau', 'type' => 'select', 'priority' => false],
 ];
+
+// Apply saved field order (if exists for this product)
+if ($mrh_pa_products_id > 0 && class_exists('MrhProductAttributes')) {
+    $mrh_pa_saved_order_json = MrhProductAttributes::getConfig('field_order_' . $mrh_pa_products_id);
+    if ($mrh_pa_saved_order_json) {
+        $mrh_pa_saved_order = json_decode($mrh_pa_saved_order_json, true);
+        if (is_array($mrh_pa_saved_order) && !empty($mrh_pa_saved_order)) {
+            $mrh_pa_fields_ordered = [];
+            // First: add fields in saved order
+            foreach ($mrh_pa_saved_order as $key) {
+                if (isset($mrh_pa_fields[$key])) {
+                    $mrh_pa_fields_ordered[$key] = $mrh_pa_fields[$key];
+                }
+            }
+            // Then: add any remaining fields not in saved order (new fields added later)
+            foreach ($mrh_pa_fields as $key => $def) {
+                if (!isset($mrh_pa_fields_ordered[$key])) {
+                    $mrh_pa_fields_ordered[$key] = $def;
+                }
+            }
+            $mrh_pa_fields = $mrh_pa_fields_ordered;
+        }
+    }
+}
 
 // Select options
 $mrh_pa_select_options = [
