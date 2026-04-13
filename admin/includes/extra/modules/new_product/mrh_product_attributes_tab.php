@@ -275,6 +275,25 @@ if (!empty($mrh_pa_first_attr)) {
 #mrh-pa-container .mrh-pa-icon-lib-btn .fa { font-size: 22px; color: #333; margin-bottom: 4px; }
 #mrh-pa-container .mrh-pa-icon-lib-btn .icon-name { font-size: 8px; color: #888; text-align: center; word-break: break-all; line-height: 1.2; }
 
+/* Quick-Pick predefined icons */
+#mrh-pa-container .mrh-pa-quickpick {
+    margin-bottom: 12px; padding: 10px; background: #eef7ee; border: 1px solid #c3e6c3; border-radius: 6px;
+}
+#mrh-pa-container .mrh-pa-quickpick-title {
+    font-size: 12px; font-weight: 700; color: #2c3e50; margin-bottom: 8px;
+}
+#mrh-pa-container .mrh-pa-quickpick-grid {
+    display: flex; flex-wrap: wrap; gap: 6px;
+}
+#mrh-pa-container .mrh-pa-quickpick-btn {
+    display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px;
+    background: #fff; border: 1px solid #ddd; border-radius: 16px; cursor: pointer;
+    font-size: 12px; transition: all 0.15s; white-space: nowrap;
+}
+#mrh-pa-container .mrh-pa-quickpick-btn:hover { border-color: #27ae60; background: #f0fdf4; transform: scale(1.03); }
+#mrh-pa-container .mrh-pa-quickpick-btn.active { border-color: #27ae60; background: #d4edda; box-shadow: 0 0 0 2px #27ae60; }
+#mrh-pa-container .mrh-pa-quickpick-btn .fa { font-size: 16px; }
+
 /* Add icon controls */
 #mrh-pa-container .mrh-pa-icon-add-controls {
     display: flex; gap: 8px; align-items: center; margin-top: 10px; padding: 10px;
@@ -467,6 +486,61 @@ if (!empty($mrh_pa_first_attr)) {
                 <span style="color:#999;font-size:12px;" id="mrh-pa-icon-empty">Keine Icons. Waehlen Sie aus der Bibliothek unten.</span>
             </div>
             
+            <!-- Quick-Pick: Vordefinierte Cannabis-Icons -->
+            <div class="mrh-pa-quickpick">
+                <div class="mrh-pa-quickpick-title"><span class="fa fa-star"></span> Schnellauswahl — Cannabis-Icons (Klick zum Hinzufuegen/Entfernen)</div>
+                <div class="mrh-pa-quickpick-grid" id="mrh-pa-quickpick-grid">
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-medkit" data-color="#ff6666" data-title="Medical" onclick="mrhPaQuickPick(this)">
+                        <span class="fa fa-medkit" style="color:#ff6666"></span> Medical
+                    </span>
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-tachometer" data-color="#54B80D" data-title="Autoflowering" onclick="mrhPaQuickPick(this)">
+                        <span class="fa fa-tachometer" style="color:#54B80D"></span> Autoflowering
+                    </span>
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-female" data-color="#e84393" data-title="Feminisiert" onclick="mrhPaQuickPick(this)">
+                        <span class="fa fa-female" style="color:#e84393"></span> Feminisiert
+                    </span>
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-mars" data-color="#0984e3" data-title="Regulaer" onclick="mrhPaQuickPick(this)">
+                        <span class="fa fa-mars" style="color:#0984e3"></span> Regulaer
+                    </span>
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-leaf" data-color="#00b894" data-title="CBD-reich" onclick="mrhPaQuickPick(this)">
+                        <span class="fa fa-leaf" style="color:#00b894"></span> CBD-reich
+                    </span>
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-fire" data-color="#d63031" data-title="Hoher THC" onclick="mrhPaQuickPick(this)">
+                        <span class="fa fa-fire" style="color:#d63031"></span> Hoher THC
+                    </span>
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-star" data-color="#f39c12" data-title="Bestseller" onclick="mrhPaQuickPick(this)">
+                        <span class="fa fa-star" style="color:#f39c12"></span> Bestseller
+                    </span>
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-diamond" data-color="#00cec9" data-title="Premium" onclick="mrhPaQuickPick(this)">
+                        <span class="fa fa-diamond" style="color:#00cec9"></span> Premium
+                    </span>
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-bolt" data-color="#e17055" data-title="Schnelle Bluete" onclick="mrhPaQuickPick(this)">
+                        <span class="fa fa-bolt" style="color:#e17055"></span> Schnelle Bluete
+                    </span>
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-shield" data-color="#636e72" data-title="Resistent" onclick="mrhPaQuickPick(this)">
+                        <span class="fa fa-shield" style="color:#636e72"></span> Resistent
+                    </span>
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-sun-o" data-color="#fdcb6e" data-title="Outdoor" onclick="mrhPaQuickPick(this)">
+                        <span class="fa fa-sun-o" style="color:#fdcb6e"></span> Outdoor
+                    </span>
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-home" data-color="#6c5ce7" data-title="Indoor" onclick="mrhPaQuickPick(this)">
+                        <span class="fa fa-home" style="color:#6c5ce7"></span> Indoor
+                    </span>
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-pagelines" data-color="#27ae60" data-title="Organic" onclick="mrhPaQuickPick(this)">
+                        <span class="fa fa-pagelines" style="color:#27ae60"></span> Organic
+                    </span>
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-snowflake-o" data-color="#74b9ff" data-title="Kaltresistent" onclick="mrhPaQuickPick(this)">
+                        <span class="fa fa-snowflake-o" style="color:#74b9ff"></span> Kaltresistent
+                    </span>
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-thermometer-full" data-color="#e74c3c" data-title="Hitzeresistent" onclick="mrhPaQuickPick(this)">
+                        <span class="fa fa-thermometer-full" style="color:#e74c3c"></span> Hitzeresistent
+                    </span>
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-trophy" data-color="#f39c12" data-title="Preisgekroent" onclick="mrhPaQuickPick(this)">
+                        <span class="fa fa-trophy" style="color:#f39c12"></span> Preisgekroent
+                    </span>
+                </div>
+            </div>
+            
             <!-- Icon Library with Search -->
             <div class="mrh-pa-icon-library">
                 <div class="mrh-pa-icon-library-header">
@@ -576,6 +650,9 @@ function mrhPaRenderIcons() {
     
     // Update library selected states
     mrhPaUpdateLibrarySelection();
+    
+    // Update quick-pick selected states
+    mrhPaUpdateQuickPick();
 }
 
 function mrhPaEditIconColor(idx, color) {
@@ -694,6 +771,52 @@ function mrhPaUpdateLibrarySelection() {
             return existing === icon || existing === icon.replace('fa-', '');
         });
         buttons[i].classList.toggle('selected', isSelected);
+    }
+}
+
+// ============================================================
+// QUICK-PICK (predefined cannabis icons)
+// ============================================================
+function mrhPaQuickPick(el) {
+    var iconClass = el.getAttribute('data-icon');
+    var color = el.getAttribute('data-color') || '#333333';
+    var title = el.getAttribute('data-title') || iconClass.replace('fa-', '');
+    
+    // Check if already in current pictos
+    var existIdx = -1;
+    for (var i = 0; i < mrhPaCurrentPictos.length; i++) {
+        var existing = (mrhPaCurrentPictos[i].icon || '').replace(/^fa\s+/, '');
+        if (existing === iconClass) {
+            existIdx = i;
+            break;
+        }
+    }
+    
+    if (existIdx >= 0) {
+        // Remove (toggle off)
+        mrhPaCurrentPictos.splice(existIdx, 1);
+    } else {
+        // Add with predefined color
+        mrhPaCurrentPictos.push({
+            icon: iconClass,
+            color: color,
+            size: '1em',
+            title: title
+        });
+    }
+    
+    mrhPaRenderIcons();
+}
+
+function mrhPaUpdateQuickPick() {
+    var btns = document.querySelectorAll('.mrh-pa-quickpick-btn');
+    for (var i = 0; i < btns.length; i++) {
+        var icon = btns[i].getAttribute('data-icon');
+        var isActive = mrhPaCurrentPictos.some(function(p) {
+            var existing = (p.icon || '').replace(/^fa\s+/, '');
+            return existing === icon;
+        });
+        btns[i].classList.toggle('active', isActive);
     }
 }
 
