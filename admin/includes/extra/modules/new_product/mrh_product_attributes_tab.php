@@ -412,6 +412,13 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
     </div>
     
     <div class="mrh-pa-body">
+        <!-- Badge-Konfiguration Hinweis -->
+        <div style="background:#e8f5e9; border:1px solid #c8e6c9; border-radius:6px; padding:10px 14px; margin-bottom:12px; font-size:12px;">
+            <span class="fa fa-info-circle" style="color:#27ae60;"></span>
+            <strong>Badges (Geschlecht, Bluetentyp)</strong> werden automatisch aus den Feldern generiert.
+            Die Badge-Icons koennen <strong>global</strong> bearbeitet werden unter:
+            <a href="mrh_product_attributes.php?tab=config" style="color:#27ae60; font-weight:600;">Hilfsprogramme &rarr; MRH Produkteigenschaften &rarr; Einstellungen &rarr; Badge-Konfiguration</a>
+        </div>
         <?php if ($mrh_pa_products_id == 0): ?>
             <p><em>Bitte speichern Sie das Produkt zuerst, bevor Sie Eigenschaften hinzufuegen.</em></p>
         <?php else: ?>

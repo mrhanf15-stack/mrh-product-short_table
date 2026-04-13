@@ -14,7 +14,7 @@ if (!defined('TABLE_CONFIGURATION')) { return; }
 class MrhProductAttributes {
     
     /** @var string Module version */
-    const VERSION = '1.5.0';
+    const VERSION = '1.6.0';
     
     /** @var string DB table name */
     const TABLE = 'mrh_product_attributes';
@@ -435,7 +435,7 @@ class MrhProductAttributes {
             
             foreach ($all_fields as $field) {
                 $db_field = $field;
-                $label_key = ($field === 'cross_genetics') ? 'cross' : $field;
+                $label_key = $field;
                 
                 if (!empty($attrs[$db_field])) {
                     $value = htmlspecialchars($attrs[$db_field]);
@@ -473,7 +473,7 @@ class MrhProductAttributes {
             ['key' => 'flowering_time',  'label_key' => 'flowering_time'],
             ['key' => 'yield_indoor',    'label_key' => 'yield_indoor'],
             ['key' => 'harvest_time',    'label_key' => 'harvest_time'],
-            ['key' => 'cross_genetics',  'label_key' => 'cross'],
+            ['key' => 'cross_genetics',  'label_key' => 'cross_genetics'],
         ];
         
         $rows = [];
@@ -572,20 +572,39 @@ class MrhProductAttributes {
         $gender = $attrs['gender'] ?? '';
         $flowering = $attrs['flowering_type'] ?? '';
         
-        // 1. Gender badge (Feminisiert = fa-venus, Regulaer = SVG male.svg)
+        // 1. Gender badge – uses global badge config from DB
         if ($gender === 'feminized') {
-            $badges[] = self::badgeSpan('fem', 'fa-venus', self::translateSelectValue('gender', 'feminized'));
+            $fem_cfg = self::getBadgeConfig('gender_feminized');
+            if ($fem_cfg['is_svg']) {
+                $badges[] = self::badgeSpanSvg('fem', $fem_cfg['icon'], self::translateSelectValue('gender', 'feminized'));
+            } else {
+                $badges[] = self::badgeSpan('fem', $fem_cfg['icon'], self::translateSelectValue('gender', 'feminized'), $fem_cfg['style']);
+            }
         } elseif ($gender === 'regular') {
-            $badges[] = self::badgeSpanSvg('reg', 'templates/tpl_mrh_2026/img/badges/male.svg', self::translateSelectValue('gender', 'regular'));
+            $reg_cfg = self::getBadgeConfig('gender_regular');
+            if ($reg_cfg['is_svg']) {
+                $badges[] = self::badgeSpanSvg('reg', $reg_cfg['icon'], self::translateSelectValue('gender', 'regular'));
+            } else {
+                $badges[] = self::badgeSpan('reg', $reg_cfg['icon'], self::translateSelectValue('gender', 'regular'), $reg_cfg['style']);
+            }
         } elseif ($gender === 'autoflower') {
-            $badges[] = self::badgeSpan('fem', 'fa-venus', self::translateSelectValue('gender', 'autoflower'));
+            $fem_cfg = self::getBadgeConfig('gender_feminized');
+            if ($fem_cfg['is_svg']) {
+                $badges[] = self::badgeSpanSvg('fem', $fem_cfg['icon'], self::translateSelectValue('gender', 'autoflower'));
+            } else {
+                $badges[] = self::badgeSpan('fem', $fem_cfg['icon'], self::translateSelectValue('gender', 'autoflower'), $fem_cfg['style']);
+            }
         }
         
         // 2. Flowering type badge
+        //    - Autoflowering: Icon badge (fa-bolt)
+        //    - Photoperiodisch: TEXT ONLY badge (kein Icon, mehrsprachig uebersetzt)
         if ($flowering === 'autoflower') {
-            $badges[] = self::badgeSpan('auto', 'fa-bolt', self::translateSelectValue('flowering_type', 'autoflower'));
+            $auto_cfg = self::getBadgeConfig('flowering_autoflower');
+            $badges[] = self::badgeSpan('auto', $auto_cfg['icon'], self::translateSelectValue('flowering_type', 'autoflower'), $auto_cfg['style']);
         } elseif ($flowering === 'photoperiod') {
-            $badges[] = self::badgeSpan('photo', 'fa-sun', self::translateSelectValue('flowering_type', 'photoperiod'));
+            // Photoperiodisch = NUR Text, kein Icon
+            $badges[] = self::badgeTextOnly('photo', self::translateSelectValue('flowering_type', 'photoperiod'));
         }
         
         // 3. Custom picto icons from DB (supports FA classes and SVG paths)
@@ -697,6 +716,94 @@ class MrhProductAttributes {
         return '<span class="mrh-type-badge mrh-badge-' . $type . '" title="' . htmlspecialchars($title) . '">' 
             . '<img src="' . htmlspecialchars($svg_url) . '" alt="' . htmlspecialchars($title) . '" style="width:14px;height:14px;vertical-align:middle" class="mrh-badge-svg">'
             . '</span>';
+    }
+    
+    /**
+     * Build a TEXT-ONLY badge (no icon).
+     * Used for Photoperiodisch – displays only translated text.
+     */
+    private static function badgeTextOnly($type, $title) {
+        return '<span class="mrh-type-badge mrh-badge-' . $type . ' mrh-badge-textonly" title="' . htmlspecialchars($title) . '">' 
+            . '<span class="mrh-badge-label">' . htmlspecialchars($title) . '</span>'
+            . '</span>';
+    }
+    
+    /**
+     * Default badge configurations.
+     * These are the hardcoded defaults; they can be overridden
+     * via the config table (key: badge_config_{badge_key}).
+     */
+    const DEFAULT_BADGE_CONFIG = [
+        'gender_feminized' => [
+            'icon'  => 'fa-venus',
+            'style' => 'solid',
+            'is_svg' => false,
+            'color' => '',
+        ],
+        'gender_regular' => [
+            'icon'  => 'templates/tpl_mrh_2026/img/badges/male.svg',
+            'style' => 'solid',
+            'is_svg' => true,
+            'color' => '',
+        ],
+        'flowering_autoflower' => [
+            'icon'  => 'fa-bolt',
+            'style' => 'solid',
+            'is_svg' => false,
+            'color' => '',
+        ],
+        'flowering_photoperiod' => [
+            'icon'  => '',
+            'style' => 'solid',
+            'is_svg' => false,
+            'color' => '',
+            'text_only' => true,
+        ],
+    ];
+    
+    /**
+     * Get badge configuration from DB config table.
+     * Falls back to DEFAULT_BADGE_CONFIG if not set.
+     *
+     * @param string $badge_key e.g. 'gender_feminized', 'flowering_autoflower'
+     * @return array Badge config with keys: icon, style, is_svg, color
+     */
+    public static function getBadgeConfig($badge_key) {
+        $default = self::DEFAULT_BADGE_CONFIG[$badge_key] ?? [
+            'icon' => '', 'style' => 'solid', 'is_svg' => false, 'color' => ''
+        ];
+        
+        $stored = self::getConfig('badge_config_' . $badge_key);
+        if (!empty($stored)) {
+            $parsed = json_decode($stored, true);
+            if (is_array($parsed)) {
+                return array_merge($default, $parsed);
+            }
+        }
+        
+        return $default;
+    }
+    
+    /**
+     * Save badge configuration to DB config table.
+     *
+     * @param string $badge_key e.g. 'gender_feminized'
+     * @param array $config Badge config array
+     */
+    public static function saveBadgeConfig($badge_key, $config) {
+        return self::setConfig('badge_config_' . $badge_key, json_encode($config));
+    }
+    
+    /**
+     * Get all badge configurations (for admin display).
+     * Returns merged defaults + any DB overrides.
+     */
+    public static function getAllBadgeConfigs() {
+        $configs = [];
+        foreach (self::DEFAULT_BADGE_CONFIG as $key => $default) {
+            $configs[$key] = self::getBadgeConfig($key);
+        }
+        return $configs;
     }
     
     /**

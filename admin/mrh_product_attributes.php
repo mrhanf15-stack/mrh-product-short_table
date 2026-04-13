@@ -314,8 +314,27 @@ if ($action === 'save_config' && $_SERVER['REQUEST_METHOD'] === 'POST') {
             MrhProductAttributes::setConfig($key, $_POST[$key]);
         }
     }
+    
+    // Save badge configurations
+    $badge_keys = array_keys(MrhProductAttributes::DEFAULT_BADGE_CONFIG);
+    foreach ($badge_keys as $bk) {
+        if (isset($_POST['badge_icon_' . $bk])) {
+            $cfg = [
+                'icon'   => trim($_POST['badge_icon_' . $bk] ?? ''),
+                'style'  => trim($_POST['badge_style_' . $bk] ?? 'solid'),
+                'is_svg' => !empty($_POST['badge_is_svg_' . $bk]),
+                'color'  => trim($_POST['badge_color_' . $bk] ?? ''),
+            ];
+            if ($bk === 'flowering_photoperiod') {
+                $cfg['text_only'] = true;
+                $cfg['icon'] = ''; // Photoperiodisch is always text-only
+            }
+            MrhProductAttributes::saveBadgeConfig($bk, $cfg);
+        }
+    }
+    
     $messageStack->add_session(defined('MRH_PA_MSG_SAVED') ? MRH_PA_MSG_SAVED : 'Gespeichert.', 'success');
-    xtc_redirect(xtc_href_link(FILENAME_MRH_PRODUCT_ATTRIBUTES));
+    xtc_redirect(xtc_href_link(FILENAME_MRH_PRODUCT_ATTRIBUTES, 'tab=config'));
 }
 
 // ============================================================
@@ -499,6 +518,84 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'stats';
                                value="<?php echo htmlspecialchars(MrhProductAttributes::getConfig('migration_batch_size', '100')); ?>">
                         <div class="mrh-pa-config-desc"><?php echo defined('MRH_PA_CONFIG_BATCH_SIZE_DESC') ? MRH_PA_CONFIG_BATCH_SIZE_DESC : 'Produkte pro Batch.'; ?></div>
                     </div>
+                </div>
+                
+                <!-- ═══════ Badge-Konfiguration ═══════ -->
+                <div style="margin-top:30px; border-top:3px solid #27ae60; padding-top:20px;">
+                    <h3 style="color:#2c3e50; font-size:16px; margin-bottom:15px;">
+                        <span class="fa fa-shield-halved"></span> Badge-Konfiguration (Global)
+                    </h3>
+                    <p style="font-size:12px; color:#666; margin-bottom:15px;">
+                        Hier koennen die automatisch generierten Badges fuer Geschlecht und Bluetentyp zentral bearbeitet werden.
+                        Aenderungen gelten sofort fuer alle Produkte.
+                    </p>
+                    
+                    <?php
+                    $badge_configs = MrhProductAttributes::getAllBadgeConfigs();
+                    $badge_labels = [
+                        'gender_feminized'      => ['Feminisiert (Geschlecht)', 'fa-venus', false],
+                        'gender_regular'         => ['Regulaer (Geschlecht)', 'male.svg', true],
+                        'flowering_autoflower'   => ['Autoflowering (Bluetentyp)', 'fa-bolt', false],
+                        'flowering_photoperiod'  => ['Photoperiodisch (Bluetentyp)', 'Nur Text', false],
+                    ];
+                    foreach ($badge_configs as $bk => $cfg):
+                        $bl = $badge_labels[$bk] ?? [$bk, '', false];
+                        $is_photo = ($bk === 'flowering_photoperiod');
+                    ?>
+                    <div class="mrh-pa-config-row" style="background:#f8f9fa; border-radius:6px; padding:12px; margin-bottom:10px;">
+                        <div class="mrh-pa-config-label" style="width:220px;">
+                            <strong><?php echo htmlspecialchars($bl[0]); ?></strong>
+                            <?php if ($is_photo): ?>
+                                <br><span style="font-size:11px; color:#e67e22;">&#9888; Nur Text, kein Icon</span>
+                            <?php endif; ?>
+                        </div>
+                        <div class="mrh-pa-config-input" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                            <?php if ($is_photo): ?>
+                                <input type="hidden" name="badge_icon_<?php echo $bk; ?>" value="">
+                                <span style="font-size:13px; color:#27ae60; font-weight:600;">
+                                    Text-Badge: Wird automatisch in der jeweiligen Sprache angezeigt
+                                    (DE: Photoperiodisch, EN: Photoperiod, FR: Photop&eacute;riode, ES: Fotoper&iacute;odo)
+                                </span>
+                            <?php else: ?>
+                                <div>
+                                    <label style="font-size:11px; color:#666;">Icon-Klasse / SVG-Pfad:</label><br>
+                                    <input type="text" name="badge_icon_<?php echo $bk; ?>" 
+                                           value="<?php echo htmlspecialchars($cfg['icon']); ?>"
+                                           style="width:280px;" placeholder="z.B. fa-venus oder templates/.../icon.svg">
+                                </div>
+                                <div>
+                                    <label style="font-size:11px; color:#666;">FA-Style:</label><br>
+                                    <select name="badge_style_<?php echo $bk; ?>" style="width:100px;">
+                                        <option value="solid" <?php echo ($cfg['style'] ?? 'solid') === 'solid' ? 'selected' : ''; ?>>Solid</option>
+                                        <option value="regular" <?php echo ($cfg['style'] ?? '') === 'regular' ? 'selected' : ''; ?>>Regular</option>
+                                        <option value="brands" <?php echo ($cfg['style'] ?? '') === 'brands' ? 'selected' : ''; ?>>Brands</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="font-size:11px; color:#666;">SVG?</label><br>
+                                    <input type="checkbox" name="badge_is_svg_<?php echo $bk; ?>" value="1" 
+                                           <?php echo !empty($cfg['is_svg']) ? 'checked' : ''; ?>>
+                                </div>
+                                <div>
+                                    <label style="font-size:11px; color:#666;">Farbe:</label><br>
+                                    <input type="color" name="badge_color_<?php echo $bk; ?>" 
+                                           value="<?php echo htmlspecialchars($cfg['color'] ?: '#333333'); ?>"
+                                           style="width:40px; height:30px; border:1px solid #ccc;">
+                                </div>
+                                <div style="margin-left:10px;">
+                                    <?php if (!empty($cfg['is_svg'])): ?>
+                                        <img src="/<?php echo htmlspecialchars(ltrim($cfg['icon'], '/')); ?>" 
+                                             style="width:20px; height:20px; vertical-align:middle;" alt="Preview">
+                                    <?php elseif (!empty($cfg['icon'])): ?>
+                                        <span class="fa-<?php echo htmlspecialchars($cfg['style'] ?? 'solid'); ?> fa-fw <?php echo htmlspecialchars($cfg['icon']); ?>" 
+                                              style="font-size:20px;<?php echo !empty($cfg['color']) ? 'color:'.htmlspecialchars($cfg['color']).';' : ''; ?>"></span>
+                                    <?php endif; ?>
+                                    <span style="font-size:11px; color:#999;">Vorschau</span>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
                 </div>
                 
                 <div style="margin-top:20px;">
