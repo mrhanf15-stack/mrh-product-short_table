@@ -22,21 +22,25 @@ class MrhProductAttributes {
     
     /**
      * Standard fields with their metadata.
-     * key => [label_de, label_en, type, is_priority, field_order, tr_class]
+     * key => [label_de, label_en, type, priority_level, field_order, tr_class]
+     * priority_level: 1 = Prio, 2 = Alt-Prio (Fallback), 0 = Normal
+     *
+     * Prio-Felder (immer bevorzugt): Sorte, THC, CBD
+     * Alt-Prio (Fallback wenn Prio leer): Bluetezeit, Ertrag Indoor, Erntezeit, Kreuzung
      */
     const STANDARD_FIELDS = [
-        'gender'         => ['Geschlecht', 'Gender', 'select', 1, 1, 'fem,reg'],
-        'flowering_type' => ['Bluetentyp', 'Flowering Type', 'select', 1, 2, 'aut'],
-        'cross'          => ['Kreuzung', 'Cross/Genetics', 'text', 1, 3, 'kreuzung'],
+        'gender'         => ['Geschlecht', 'Gender', 'select', 0, 1, 'fem,reg'],
+        'flowering_type' => ['Bluetentyp', 'Flowering Type', 'select', 0, 2, 'aut'],
+        'type'           => ['Sorte', 'Type (Indica/Sativa)', 'select', 1, 3, 'sort'],
         'thc'            => ['THC', 'THC', 'text', 1, 4, 'thc'],
         'cbd'            => ['CBD', 'CBD', 'text', 1, 5, 'cbd_w'],
-        'type'           => ['Sorte', 'Type (Indica/Sativa)', 'select', 0, 6, 'sort'],
-        'yield_indoor'   => ['Ertrag Indoor', 'Yield Indoor', 'text', 0, 7, 'ertrag_in'],
-        'yield_outdoor'  => ['Ertrag Outdoor', 'Yield Outdoor', 'text', 0, 8, 'ertrag_out'],
-        'height_indoor'  => ['Hoehe Indoor', 'Height Indoor', 'text', 0, 9, 'hoehe_in'],
-        'height_outdoor' => ['Hoehe Outdoor', 'Height Outdoor', 'text', 0, 10, 'hoehe_out'],
-        'flowering_time' => ['Bluetezeit', 'Flowering Time', 'text', 0, 11, 'bluete'],
-        'harvest_time'   => ['Erntezeit', 'Harvest Time', 'text', 0, 12, 'ernte'],
+        'cross'          => ['Kreuzung', 'Cross/Genetics', 'text', 2, 6, 'kreuzung'],
+        'flowering_time' => ['Bluetezeit', 'Flowering Time', 'text', 2, 7, 'bluete'],
+        'yield_indoor'   => ['Ertrag Indoor', 'Yield Indoor', 'text', 2, 8, 'ertrag_in'],
+        'harvest_time'   => ['Erntezeit', 'Harvest Time', 'text', 2, 9, 'ernte'],
+        'yield_outdoor'  => ['Ertrag Outdoor', 'Yield Outdoor', 'text', 0, 10, 'ertrag_out'],
+        'height_indoor'  => ['Hoehe Indoor', 'Height Indoor', 'text', 0, 11, 'hoehe_in'],
+        'height_outdoor' => ['Hoehe Outdoor', 'Height Outdoor', 'text', 0, 12, 'hoehe_out'],
         'climate'        => ['Klima', 'Climate', 'text', 0, 13, 'klima'],
         'effect'         => ['Wirkung', 'Effect', 'text', 0, 14, 'wirkung'],
         'taste'          => ['Geschmack', 'Taste', 'text', 0, 15, 'geschmack'],
@@ -438,6 +442,14 @@ class MrhProductAttributes {
      * Build a mini-table HTML from structured attributes.
      * Used in listings, boxes, seedfinder, compare.
      *
+     * LISTING/BOX context: Always exactly 3 rows.
+     * - Prio-Felder (priority_level=1): Sorte, THC, CBD
+     * - Alt-Prio (priority_level=2): Bluetezeit, Ertrag Indoor, Erntezeit, Kreuzung
+     * - If a Prio field is empty, fill with next available Alt-Prio field
+     * - If still empty, show placeholder '—'
+     *
+     * DETAIL context: Show all filled fields (no 3-row limit).
+     *
      * @param array $attrs Attributes row from DB
      * @param string $context 'listing'|'box'|'seedfinder'|'compare'|'detail'
      * @return string HTML
@@ -445,48 +457,104 @@ class MrhProductAttributes {
     public static function buildMiniTable($attrs, $context = 'listing') {
         if (empty($attrs)) return '';
         
-        $rows = [];
-        $priority_fields = ['gender', 'flowering_type', 'cross_genetics', 'thc', 'cbd'];
-        $all_fields = array_merge($priority_fields, ['type', 'yield_indoor', 'yield_outdoor', 
-            'height_indoor', 'height_outdoor', 'flowering_time', 'harvest_time', 
-            'climate', 'effect', 'taste', 'growing']);
-        
-        // In listing/box context, show only priority fields
-        $fields_to_show = ($context === 'listing' || $context === 'box') 
-            ? $priority_fields 
-            : $all_fields;
-        
         $field_labels = self::STANDARD_FIELDS;
         
-        foreach ($fields_to_show as $field) {
-            $db_field = ($field === 'cross_genetics') ? 'cross_genetics' : $field;
-            $label_key = ($field === 'cross_genetics') ? 'cross' : $field;
+        // DETAIL context: show all filled fields, no limit
+        if ($context === 'detail' || $context === 'compare' || $context === 'seedfinder') {
+            $rows = [];
+            $all_fields = ['type', 'thc', 'cbd', 'cross_genetics', 'flowering_time', 
+                'yield_indoor', 'harvest_time', 'yield_outdoor', 'height_indoor', 
+                'height_outdoor', 'climate', 'effect', 'taste', 'growing'];
             
-            if (!empty($attrs[$db_field])) {
-                $value = htmlspecialchars($attrs[$db_field]);
+            foreach ($all_fields as $field) {
+                $db_field = $field;
+                $label_key = ($field === 'cross_genetics') ? 'cross' : $field;
                 
-                // Translate select values
-                if (in_array($field, ['gender', 'flowering_type', 'type', 'growing'])) {
-                    $value = self::translateSelectValue($field, $attrs[$db_field]);
-                }
-                
-                $label = isset($field_labels[$label_key]) ? $field_labels[$label_key][0] : ucfirst($field);
-                $tr_class = isset($field_labels[$label_key]) ? $field_labels[$label_key][5] : '';
-                
-                $rows[] = '<tr class="' . htmlspecialchars($tr_class) . '"><td>' . htmlspecialchars($label) . '</td><td>' . $value . '</td></tr>';
-            }
-        }
-        
-        // Add custom fields
-        if (!empty($attrs['custom_fields_decoded']) && is_array($attrs['custom_fields_decoded'])) {
-            foreach ($attrs['custom_fields_decoded'] as $cf) {
-                if (!empty($cf['value'])) {
-                    $rows[] = '<tr class="custom"><td>' . htmlspecialchars($cf['label'] ?? '') . '</td><td>' . htmlspecialchars($cf['value']) . '</td></tr>';
+                if (!empty($attrs[$db_field])) {
+                    $value = htmlspecialchars($attrs[$db_field]);
+                    if (in_array($field, ['gender', 'flowering_type', 'type', 'growing'])) {
+                        $value = self::translateSelectValue($field, $attrs[$db_field]);
+                    }
+                    $label = isset($field_labels[$label_key]) ? $field_labels[$label_key][0] : ucfirst($field);
+                    $tr_class = isset($field_labels[$label_key]) ? $field_labels[$label_key][5] : '';
+                    $rows[] = '<tr class="' . htmlspecialchars($tr_class) . '"><td>' . htmlspecialchars($label) . '</td><td>' . $value . '</td></tr>';
                 }
             }
+            
+            // Custom fields
+            if (!empty($attrs['custom_fields_decoded']) && is_array($attrs['custom_fields_decoded'])) {
+                foreach ($attrs['custom_fields_decoded'] as $cf) {
+                    if (!empty($cf['value'])) {
+                        $rows[] = '<tr class="custom"><td>' . htmlspecialchars($cf['label'] ?? '') . '</td><td>' . htmlspecialchars($cf['value']) . '</td></tr>';
+                    }
+                }
+            }
+            
+            if (empty($rows)) return '';
+            $class = 'mrh-attr-table mrh-attr-' . $context;
+            return '<table class="' . $class . ' tebals"><tbody>' . implode('', $rows) . '</tbody></table>';
         }
         
-        if (empty($rows)) return '';
+        // LISTING/BOX context: Always exactly 3 rows
+        // Prio fields in order: Sorte, THC, CBD
+        $prio_fields = [
+            ['key' => 'type',  'label_key' => 'type'],
+            ['key' => 'thc',   'label_key' => 'thc'],
+            ['key' => 'cbd',   'label_key' => 'cbd'],
+        ];
+        
+        // Alt-Prio fields (fallback pool): Bluetezeit, Ertrag Indoor, Erntezeit, Kreuzung
+        $alt_prio_fields = [
+            ['key' => 'flowering_time',  'label_key' => 'flowering_time'],
+            ['key' => 'yield_indoor',    'label_key' => 'yield_indoor'],
+            ['key' => 'harvest_time',    'label_key' => 'harvest_time'],
+            ['key' => 'cross_genetics',  'label_key' => 'cross'],
+        ];
+        
+        // Build the 3 rows
+        $rows = [];
+        $alt_idx = 0; // Pointer into alt-prio pool
+        
+        foreach ($prio_fields as $pf) {
+            $db_field = $pf['key'];
+            $label_key = $pf['label_key'];
+            $value_raw = $attrs[$db_field] ?? '';
+            
+            // If prio field is empty, try alt-prio fields
+            if (empty(trim($value_raw))) {
+                $found_alt = false;
+                while ($alt_idx < count($alt_prio_fields)) {
+                    $af = $alt_prio_fields[$alt_idx];
+                    $alt_val = $attrs[$af['key']] ?? '';
+                    $alt_idx++;
+                    if (!empty(trim($alt_val))) {
+                        // Use this alt-prio field instead
+                        $db_field = $af['key'];
+                        $label_key = $af['label_key'];
+                        $value_raw = $alt_val;
+                        $found_alt = true;
+                        break;
+                    }
+                }
+                
+                if (!$found_alt) {
+                    // No alt-prio available: show placeholder
+                    $label = isset($field_labels[$pf['label_key']]) ? $field_labels[$pf['label_key']][0] : ucfirst($pf['key']);
+                    $tr_class = isset($field_labels[$pf['label_key']]) ? $field_labels[$pf['label_key']][5] : '';
+                    $rows[] = '<tr class="' . htmlspecialchars($tr_class) . '"><td>' . htmlspecialchars($label) . '</td><td>&mdash;</td></tr>';
+                    continue;
+                }
+            }
+            
+            // Render the row
+            $value = htmlspecialchars($value_raw);
+            if (in_array($db_field, ['gender', 'flowering_type', 'type', 'growing'])) {
+                $value = self::translateSelectValue($db_field, $value_raw);
+            }
+            $label = isset($field_labels[$label_key]) ? $field_labels[$label_key][0] : ucfirst($db_field);
+            $tr_class = isset($field_labels[$label_key]) ? $field_labels[$label_key][5] : '';
+            $rows[] = '<tr class="' . htmlspecialchars($tr_class) . '"><td>' . htmlspecialchars($label) . '</td><td>' . $value . '</td></tr>';
+        }
         
         $class = 'mrh-attr-table mrh-attr-' . $context;
         return '<table class="' . $class . ' tebals"><tbody>' . implode('', $rows) . '</tbody></table>';

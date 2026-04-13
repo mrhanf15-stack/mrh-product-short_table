@@ -45,19 +45,22 @@ while ($mrh_pa_lang_row = xtc_db_fetch_array($mrh_pa_lang_q)) {
 }
 
 // Standard fields definition
+// priority: 'prio' = Hauptpriorität (Sorte, THC, CBD)
+//           'alt'  = Alternative Priorität / Fallback (Bluetezeit, Ertrag Indoor, Erntezeit, Kreuzung)
+//           false  = Normal
 $mrh_pa_fields = [
-    'gender'         => ['label' => defined('MRH_PA_FIELD_GENDER') ? MRH_PA_FIELD_GENDER : 'Geschlecht', 'type' => 'select', 'priority' => true],
-    'flowering_type' => ['label' => defined('MRH_PA_FIELD_FLOWERING_TYPE') ? MRH_PA_FIELD_FLOWERING_TYPE : 'Bluetentyp', 'type' => 'select', 'priority' => true],
-    'cross_genetics' => ['label' => defined('MRH_PA_FIELD_CROSS') ? MRH_PA_FIELD_CROSS : 'Kreuzung', 'type' => 'text', 'priority' => true],
-    'thc'            => ['label' => defined('MRH_PA_FIELD_THC') ? MRH_PA_FIELD_THC : 'THC', 'type' => 'text', 'priority' => true],
-    'cbd'            => ['label' => defined('MRH_PA_FIELD_CBD') ? MRH_PA_FIELD_CBD : 'CBD', 'type' => 'text', 'priority' => true],
-    'type'           => ['label' => defined('MRH_PA_FIELD_TYPE') ? MRH_PA_FIELD_TYPE : 'Sorte', 'type' => 'select', 'priority' => false],
-    'yield_indoor'   => ['label' => defined('MRH_PA_FIELD_YIELD_INDOOR') ? MRH_PA_FIELD_YIELD_INDOOR : 'Ertrag Indoor', 'type' => 'text', 'priority' => false],
+    'gender'         => ['label' => defined('MRH_PA_FIELD_GENDER') ? MRH_PA_FIELD_GENDER : 'Geschlecht', 'type' => 'select', 'priority' => false],
+    'flowering_type' => ['label' => defined('MRH_PA_FIELD_FLOWERING_TYPE') ? MRH_PA_FIELD_FLOWERING_TYPE : 'Bluetentyp', 'type' => 'select', 'priority' => false],
+    'type'           => ['label' => defined('MRH_PA_FIELD_TYPE') ? MRH_PA_FIELD_TYPE : 'Sorte', 'type' => 'select', 'priority' => 'prio'],
+    'thc'            => ['label' => defined('MRH_PA_FIELD_THC') ? MRH_PA_FIELD_THC : 'THC', 'type' => 'text', 'priority' => 'prio'],
+    'cbd'            => ['label' => defined('MRH_PA_FIELD_CBD') ? MRH_PA_FIELD_CBD : 'CBD', 'type' => 'text', 'priority' => 'prio'],
+    'cross_genetics' => ['label' => defined('MRH_PA_FIELD_CROSS') ? MRH_PA_FIELD_CROSS : 'Kreuzung', 'type' => 'text', 'priority' => 'alt'],
+    'flowering_time' => ['label' => defined('MRH_PA_FIELD_FLOWERING_TIME') ? MRH_PA_FIELD_FLOWERING_TIME : 'Bluetezeit', 'type' => 'text', 'priority' => 'alt'],
+    'yield_indoor'   => ['label' => defined('MRH_PA_FIELD_YIELD_INDOOR') ? MRH_PA_FIELD_YIELD_INDOOR : 'Ertrag Indoor', 'type' => 'text', 'priority' => 'alt'],
+    'harvest_time'   => ['label' => defined('MRH_PA_FIELD_HARVEST_TIME') ? MRH_PA_FIELD_HARVEST_TIME : 'Erntezeit', 'type' => 'text', 'priority' => 'alt'],
     'yield_outdoor'  => ['label' => defined('MRH_PA_FIELD_YIELD_OUTDOOR') ? MRH_PA_FIELD_YIELD_OUTDOOR : 'Ertrag Outdoor', 'type' => 'text', 'priority' => false],
     'height_indoor'  => ['label' => defined('MRH_PA_FIELD_HEIGHT_INDOOR') ? MRH_PA_FIELD_HEIGHT_INDOOR : 'Hoehe Indoor', 'type' => 'text', 'priority' => false],
     'height_outdoor' => ['label' => defined('MRH_PA_FIELD_HEIGHT_OUTDOOR') ? MRH_PA_FIELD_HEIGHT_OUTDOOR : 'Hoehe Outdoor', 'type' => 'text', 'priority' => false],
-    'flowering_time' => ['label' => defined('MRH_PA_FIELD_FLOWERING_TIME') ? MRH_PA_FIELD_FLOWERING_TIME : 'Bluetezeit', 'type' => 'text', 'priority' => false],
-    'harvest_time'   => ['label' => defined('MRH_PA_FIELD_HARVEST_TIME') ? MRH_PA_FIELD_HARVEST_TIME : 'Erntezeit', 'type' => 'text', 'priority' => false],
     'climate'        => ['label' => defined('MRH_PA_FIELD_CLIMATE') ? MRH_PA_FIELD_CLIMATE : 'Klima', 'type' => 'text', 'priority' => false],
     'effect'         => ['label' => defined('MRH_PA_FIELD_EFFECT') ? MRH_PA_FIELD_EFFECT : 'Wirkung', 'type' => 'text', 'priority' => false],
     'taste'          => ['label' => defined('MRH_PA_FIELD_TASTE') ? MRH_PA_FIELD_TASTE : 'Geschmack', 'type' => 'text', 'priority' => false],
@@ -133,10 +136,12 @@ $mrh_pa_select_options = [
     border-bottom: 1px solid #eee;
 }
 #mrh-pa-container .mrh-pa-field-row.priority { background: #f0fdf4; padding: 6px 8px; border-radius: 4px; }
+#mrh-pa-container .mrh-pa-field-row.alt-priority { background: #f0f4fd; padding: 6px 8px; border-radius: 4px; }
 #mrh-pa-container .mrh-pa-field-label { 
     width: 180px; font-weight: 600; font-size: 13px; flex-shrink: 0; 
 }
 #mrh-pa-container .mrh-pa-field-label .priority-star { color: #27ae60; margin-left: 4px; }
+#mrh-pa-container .mrh-pa-field-label .alt-priority-star { color: #3498db; margin-left: 4px; }
 #mrh-pa-container .mrh-pa-field-input { flex: 1; }
 #mrh-pa-container .mrh-pa-field-input input,
 #mrh-pa-container .mrh-pa-field-input select {
@@ -242,11 +247,18 @@ $mrh_pa_select_options = [
                  id="mrh-pa-lang-<?php echo $lid; ?>">
                 
                 <?php foreach ($mrh_pa_fields as $field_key => $field_def): ?>
-                    <div class="mrh-pa-field-row <?php echo $field_def['priority'] ? 'priority' : ''; ?>">
+                    <?php 
+                        $row_class = '';
+                        if ($field_def['priority'] === 'prio') $row_class = 'priority';
+                        elseif ($field_def['priority'] === 'alt') $row_class = 'alt-priority';
+                    ?>
+                    <div class="mrh-pa-field-row <?php echo $row_class; ?>">
                         <div class="mrh-pa-field-label">
                             <?php echo $field_def['label']; ?>
-                            <?php if ($field_def['priority']): ?>
-                                <span class="priority-star" title="Prioritaetsfeld">&#9733;</span>
+                            <?php if ($field_def['priority'] === 'prio'): ?>
+                                <span class="priority-star" title="Prio-Feld (immer in Mini-Tabelle)">&#9733;</span>
+                            <?php elseif ($field_def['priority'] === 'alt'): ?>
+                                <span class="alt-priority-star" title="Alt-Prio (Fallback wenn Prio leer)">&#9734;</span>
                             <?php endif; ?>
                         </div>
                         <div class="mrh-pa-field-input">
