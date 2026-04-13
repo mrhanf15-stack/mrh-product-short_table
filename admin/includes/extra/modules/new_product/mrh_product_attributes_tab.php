@@ -130,10 +130,14 @@ if (!empty($mrh_pa_first_attr)) {
 $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
 ?>
 
-<!-- FontAwesome 4.7 CDN (required for icon previews) -->
+<!-- FontAwesome 7 from template (required for FA7 icon previews in admin) -->
+<link rel="stylesheet" href="/templates/tpl_mrh_2026/css/fontawesome-7.css" />
+<link rel="stylesheet" href="/templates/tpl_mrh_2026/css/fontawesome-6.css" />
+<link rel="stylesheet" href="/templates/tpl_mrh_2026/css/fontawesome-6-custom.css" />
+<!-- FontAwesome 4.7 CDN (fallback for legacy icons) -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
 
-<!-- MRH Product Attributes Tab v1.3.0 -->
+<!-- MRH Product Attributes Tab v1.5.1 -->
 <style>
 #mrh-pa-container { margin: 10px 0; padding: 0; }
 #mrh-pa-container .mrh-pa-header { 
