@@ -1316,9 +1316,8 @@ function mrhPaSaveAll() {
                 }
             }
         });
-        if (customFields.length > 0) {
-            langData.custom = customFields;
-        }
+        // Always send custom array — empty array tells server to clear DB
+        langData.custom = customFields;
         
         payload.languages[langId] = langData;
     });
