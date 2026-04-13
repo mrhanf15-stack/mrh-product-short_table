@@ -31,6 +31,122 @@ if (class_exists('MrhProductAttributes')) {
 $action = isset($_GET['action']) ? $_GET['action'] : '';
 
 // ============================================================
+// AJAX: Save product attributes (from product edit tab)
+// ============================================================
+if ($action === 'save_product' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json; charset=utf-8');
+    
+    if (!class_exists('MrhProductAttributes')) {
+        echo json_encode(['success' => false, 'message' => 'Module not loaded']);
+        exit;
+    }
+    
+    // Parse JSON body
+    $raw = file_get_contents('php://input');
+    $payload = json_decode($raw, true);
+    
+    if (!$payload || empty($payload['products_id'])) {
+        echo json_encode(['success' => false, 'message' => 'Missing products_id']);
+        exit;
+    }
+    
+    $products_id = (int)$payload['products_id'];
+    $is_seed = isset($payload['is_seed']) ? (int)$payload['is_seed'] : 1;
+    
+    // Pictos (global)
+    $pictos = null;
+    if (isset($payload['pictos']) && is_array($payload['pictos'])) {
+        $pictos = [];
+        foreach ($payload['pictos'] as $p) {
+            if (!empty($p['icon'])) {
+                $pictos[] = [
+                    'icon'  => preg_replace('/[^a-zA-Z0-9\-\.\/\:_ ]/', '', $p['icon'] ?? ''),
+                    'color' => preg_replace('/[^a-zA-Z0-9#]/', '', $p['color'] ?? '#333333'),
+                    'size'  => preg_replace('/[^a-zA-Z0-9.px]/', '', $p['size'] ?? '16px'),
+                    'title' => mb_substr(strip_tags($p['title'] ?? ''), 0, 100),
+                ];
+            }
+        }
+    }
+    
+    // Cannabis Cups
+    $cups = isset($payload['cannabis_cups']) ? max(0, min(99, (int)$payload['cannabis_cups'])) : 0;
+    
+    // Field order (optional)
+    $field_order = null;
+    if (isset($payload['field_order']) && is_array($payload['field_order'])) {
+        $field_order = array_values(array_filter($payload['field_order'], function($v) {
+            return preg_match('/^[a-z_]+$/', $v);
+        }));
+    }
+    
+    // Standard fields
+    $standard_fields = [
+        'gender', 'flowering_type', 'cross_genetics', 'thc', 'cbd', 'type',
+        'yield_indoor', 'yield_outdoor', 'height_indoor', 'height_outdoor',
+        'flowering_time', 'harvest_time', 'climate', 'effect', 'taste', 'growing'
+    ];
+    
+    $saved_langs = 0;
+    
+    // Process each language
+    if (isset($payload['languages']) && is_array($payload['languages'])) {
+        foreach ($payload['languages'] as $lang_id => $lang_data) {
+            $lang_id = (int)$lang_id;
+            if ($lang_id <= 0) continue;
+            
+            $data = ['is_seed' => $is_seed];
+            
+            foreach ($standard_fields as $field) {
+                if (isset($lang_data[$field])) {
+                    $data[$field] = trim($lang_data[$field]);
+                }
+            }
+            
+            // Custom fields
+            if (isset($lang_data['custom']) && is_array($lang_data['custom'])) {
+                $custom_fields = [];
+                foreach ($lang_data['custom'] as $cf) {
+                    if (!empty($cf['label']) || !empty($cf['value'])) {
+                        $custom_fields[] = [
+                            'label' => trim($cf['label'] ?? ''),
+                            'value' => trim($cf['value'] ?? ''),
+                        ];
+                    }
+                }
+                if (!empty($custom_fields)) {
+                    $data['custom_fields'] = $custom_fields;
+                }
+            }
+            
+            // Pictos (same for all languages)
+            if ($pictos !== null) {
+                $data['pictos'] = $pictos;
+            }
+            
+            // Cannabis Cups
+            $data['cannabis_cups'] = $cups;
+            
+            MrhProductAttributes::saveAttributes($products_id, $lang_id, $data, 'manual');
+            $saved_langs++;
+        }
+    }
+    
+    // Save field order if provided
+    if ($field_order !== null) {
+        MrhProductAttributes::setConfig('field_order_' . $products_id, json_encode($field_order));
+    }
+    
+    echo json_encode([
+        'success' => true, 
+        'message' => $saved_langs . ' Sprache(n) gespeichert.',
+        'products_id' => $products_id,
+        'languages_saved' => $saved_langs
+    ]);
+    exit;
+}
+
+// ============================================================
 // AJAX: AI Fill (single product)
 // ============================================================
 if ($action === 'ai_fill' && isset($_GET['products_id'])) {
