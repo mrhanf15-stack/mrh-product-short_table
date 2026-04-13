@@ -18,7 +18,7 @@
  * - Auto-preset detection from loaded data
  *
  * @package MRH_Product_Attributes
- * @version 1.4.0
+ * @version 1.5.0
  */
 
 if (!defined('_VALID_XTC')) { return; }
@@ -320,12 +320,20 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
 }
 #mrh-pa-container .mrh-pa-quickpick-btn:hover { border-color: #27ae60; background: #f0fdf4; transform: scale(1.03); }
 #mrh-pa-container .mrh-pa-quickpick-btn.active { border-color: #27ae60; background: #d4edda; box-shadow: 0 0 0 2px #27ae60; }
-#mrh-pa-container .mrh-pa-quickpick-btn .fa { font-size: 16px; }
+#mrh-pa-container .mrh-pa-quickpick-btn .fa,
+#mrh-pa-container .mrh-pa-quickpick-btn .fa-solid,
+#mrh-pa-container .mrh-pa-quickpick-btn .fa-regular,
+#mrh-pa-container .mrh-pa-quickpick-btn .fa-brands { font-size: 16px; }
 #mrh-pa-container .mrh-pa-quickpick-btn .qp-svg { width: 16px; height: 16px; vertical-align: middle; }
 #mrh-pa-container .mrh-pa-quickpick-btn .qp-edit { display: none; align-items: center; gap: 4px; margin-left: 4px; }
 #mrh-pa-container .mrh-pa-quickpick-btn.active .qp-edit { display: inline-flex; }
 #mrh-pa-container .mrh-pa-quickpick-btn .qp-color { width: 20px; height: 20px; padding: 0; border: 1px solid #aaa; border-radius: 50%; cursor: pointer; }
 #mrh-pa-container .mrh-pa-quickpick-btn .qp-size-input { width: 40px; padding: 1px 3px; border: 1px solid #aaa; border-radius: 3px; font-size: 10px; text-align: center; }
+#mrh-pa-container .mrh-pa-quickpick-btn .qp-title-input { width: 80px; padding: 1px 3px; border: 1px solid #aaa; border-radius: 3px; font-size: 10px; }
+#mrh-pa-container .mrh-pa-style-switcher { display: inline-flex; gap: 4px; margin: 0 8px; }
+#mrh-pa-container .mrh-pa-style-btn { padding: 3px 10px; border: 1px solid #ccc; border-radius: 4px; background: #f5f5f5; cursor: pointer; font-size: 11px; font-weight: 600; }
+#mrh-pa-container .mrh-pa-style-btn:hover { background: #e0e0e0; }
+#mrh-pa-container .mrh-pa-style-btn.active { background: #27ae60; color: #fff; border-color: #27ae60; }
 
 /* Add icon controls */
 #mrh-pa-container .mrh-pa-icon-add-controls {
@@ -552,130 +560,71 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
                 <span style="color:#999;font-size:12px;" id="mrh-pa-icon-empty">Keine Icons. Waehlen Sie aus der Bibliothek unten.</span>
             </div>
             
-            <!-- Quick-Pick: Vordefinierte Cannabis-Icons -->
+            <!-- Quick-Pick: Vordefinierte Cannabis-Icons (FA7, kein Text default, optionale Texteingabe) -->
             <div class="mrh-pa-quickpick">
-                <div class="mrh-pa-quickpick-title"><span class="fa fa-star"></span> Schnellauswahl — Cannabis-Icons (Klick zum Hinzufuegen/Entfernen)</div>
+                <div class="mrh-pa-quickpick-title"><span class="fa-solid fa-star"></span> Schnellauswahl — Cannabis-Badges (Klick zum Hinzufuegen/Entfernen)</div>
                 <div class="mrh-pa-quickpick-grid" id="mrh-pa-quickpick-grid">
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-medkit" data-color="#ff6666" data-title="Medical" data-type="fa" onclick="mrhPaQuickPick(this)">
-                        <span class="fa fa-medkit" style="color:#ff6666"></span> Medical
-                        <span class="qp-edit" onclick="event.stopPropagation()">
-                            <input type="color" class="qp-color" value="#ff6666" onchange="mrhPaQpEditColor(this)">
-                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
-                        </span>
-                    </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-tachometer" data-color="#54B80D" data-title="Autoflowering" data-type="fa" onclick="mrhPaQuickPick(this)">
-                        <span class="fa fa-tachometer" style="color:#54B80D"></span> Autoflowering
-                        <span class="qp-edit" onclick="event.stopPropagation()">
-                            <input type="color" class="qp-color" value="#54B80D" onchange="mrhPaQpEditColor(this)">
-                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
-                        </span>
-                    </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-venus" data-color="#e84393" data-title="Feminisiert" data-type="fa" onclick="mrhPaQuickPick(this)">
-                        <span class="fa fa-venus" style="color:#e84393"></span> Feminisiert
-                        <span class="qp-edit" onclick="event.stopPropagation()">
-                            <input type="color" class="qp-color" value="#e84393" onchange="mrhPaQpEditColor(this)">
-                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
-                        </span>
-                    </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="svg:<?php echo $mrh_pa_badge_base; ?>male.svg" data-color="" data-title="Regulaer" data-type="svg" onclick="mrhPaQuickPick(this)">
-                        <img class="qp-svg" src="/<?php echo $mrh_pa_badge_base; ?>male.svg" alt="M"> Regulaer
-                        <span class="qp-edit" onclick="event.stopPropagation()">
-                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
-                        </span>
-                    </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-leaf" data-color="#00b894" data-title="CBD-reich" data-type="fa" onclick="mrhPaQuickPick(this)">
-                        <span class="fa fa-leaf" style="color:#00b894"></span> CBD-reich
-                        <span class="qp-edit" onclick="event.stopPropagation()">
-                            <input type="color" class="qp-color" value="#00b894" onchange="mrhPaQpEditColor(this)">
-                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
-                        </span>
-                    </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-fire" data-color="#d63031" data-title="Hoher THC" data-type="fa" onclick="mrhPaQuickPick(this)">
-                        <span class="fa fa-fire" style="color:#d63031"></span> Hoher THC
-                        <span class="qp-edit" onclick="event.stopPropagation()">
-                            <input type="color" class="qp-color" value="#d63031" onchange="mrhPaQpEditColor(this)">
-                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
-                        </span>
-                    </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-star" data-color="#f39c12" data-title="Bestseller" data-type="fa" onclick="mrhPaQuickPick(this)">
-                        <span class="fa fa-star" style="color:#f39c12"></span> Bestseller
-                        <span class="qp-edit" onclick="event.stopPropagation()">
-                            <input type="color" class="qp-color" value="#f39c12" onchange="mrhPaQpEditColor(this)">
-                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
-                        </span>
-                    </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-diamond" data-color="#00cec9" data-title="Premium" data-type="fa" onclick="mrhPaQuickPick(this)">
-                        <span class="fa fa-diamond" style="color:#00cec9"></span> Premium
-                        <span class="qp-edit" onclick="event.stopPropagation()">
-                            <input type="color" class="qp-color" value="#00cec9" onchange="mrhPaQpEditColor(this)">
-                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
-                        </span>
-                    </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-bolt" data-color="#e17055" data-title="Schnelle Bluete" data-type="fa" onclick="mrhPaQuickPick(this)">
-                        <span class="fa fa-bolt" style="color:#e17055"></span> Schnelle Bluete
-                        <span class="qp-edit" onclick="event.stopPropagation()">
-                            <input type="color" class="qp-color" value="#e17055" onchange="mrhPaQpEditColor(this)">
-                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
-                        </span>
-                    </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-shield" data-color="#636e72" data-title="Resistent" data-type="fa" onclick="mrhPaQuickPick(this)">
-                        <span class="fa fa-shield" style="color:#636e72"></span> Resistent
-                        <span class="qp-edit" onclick="event.stopPropagation()">
-                            <input type="color" class="qp-color" value="#636e72" onchange="mrhPaQpEditColor(this)">
-                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
-                        </span>
-                    </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-sun-o" data-color="#fdcb6e" data-title="Outdoor" data-type="fa" onclick="mrhPaQuickPick(this)">
-                        <span class="fa fa-sun-o" style="color:#fdcb6e"></span> Outdoor
-                        <span class="qp-edit" onclick="event.stopPropagation()">
-                            <input type="color" class="qp-color" value="#fdcb6e" onchange="mrhPaQpEditColor(this)">
-                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
-                        </span>
-                    </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-home" data-color="#6c5ce7" data-title="Indoor" data-type="fa" onclick="mrhPaQuickPick(this)">
-                        <span class="fa fa-home" style="color:#6c5ce7"></span> Indoor
-                        <span class="qp-edit" onclick="event.stopPropagation()">
-                            <input type="color" class="qp-color" value="#6c5ce7" onchange="mrhPaQpEditColor(this)">
-                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
-                        </span>
-                    </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-pagelines" data-color="#27ae60" data-title="Organic" data-type="fa" onclick="mrhPaQuickPick(this)">
-                        <span class="fa fa-pagelines" style="color:#27ae60"></span> Organic
-                        <span class="qp-edit" onclick="event.stopPropagation()">
-                            <input type="color" class="qp-color" value="#27ae60" onchange="mrhPaQpEditColor(this)">
-                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
-                        </span>
-                    </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-snowflake-o" data-color="#74b9ff" data-title="Kaltresistent" data-type="fa" onclick="mrhPaQuickPick(this)">
-                        <span class="fa fa-snowflake-o" style="color:#74b9ff"></span> Kaltresistent
-                        <span class="qp-edit" onclick="event.stopPropagation()">
-                            <input type="color" class="qp-color" value="#74b9ff" onchange="mrhPaQpEditColor(this)">
-                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
-                        </span>
-                    </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-thermometer-full" data-color="#e74c3c" data-title="Hitzeresistent" data-type="fa" onclick="mrhPaQuickPick(this)">
-                        <span class="fa fa-thermometer-full" style="color:#e74c3c"></span> Hitzeresistent
-                        <span class="qp-edit" onclick="event.stopPropagation()">
-                            <input type="color" class="qp-color" value="#e74c3c" onchange="mrhPaQpEditColor(this)">
-                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
-                        </span>
-                    </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-trophy" data-color="#f39c12" data-title="Preisgekroent" data-type="fa" onclick="mrhPaQuickPick(this)">
-                        <span class="fa fa-trophy" style="color:#f39c12"></span> Preisgekroent
-                        <span class="qp-edit" onclick="event.stopPropagation()">
-                            <input type="color" class="qp-color" value="#f39c12" onchange="mrhPaQpEditColor(this)">
-                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
-                        </span>
-                    </span>
+                    <?php
+                    $mrh_pa_qp_badges = [
+                        ['icon'=>'fa-cannabis',    'color'=>'#27ae60', 'title'=>'', 'style'=>'solid'],
+                        ['icon'=>'fa-bong',        'color'=>'#8e44ad', 'title'=>'', 'style'=>'solid'],
+                        ['icon'=>'fa-joint',       'color'=>'#e67e22', 'title'=>'', 'style'=>'solid'],
+                        ['icon'=>'fa-pipe-smoking','color'=>'#795548', 'title'=>'', 'style'=>'solid'],
+                        ['icon'=>'fa-seedling',    'color'=>'#2ecc71', 'title'=>'', 'style'=>'solid'],
+                        ['icon'=>'fa-leaf',        'color'=>'#00b894', 'title'=>'', 'style'=>'solid'],
+                        ['icon'=>'fa-venus',       'color'=>'#e84393', 'title'=>'', 'style'=>'solid'],
+                        ['icon'=>'fa-mars',        'color'=>'#0984e3', 'title'=>'', 'style'=>'solid'],
+                        ['icon'=>'fa-kit-medical', 'color'=>'#ff6666', 'title'=>'', 'style'=>'solid'],
+                        ['icon'=>'fa-fire',        'color'=>'#d63031', 'title'=>'', 'style'=>'solid'],
+                        ['icon'=>'fa-bolt',        'color'=>'#e17055', 'title'=>'', 'style'=>'solid'],
+                        ['icon'=>'fa-star',        'color'=>'#f39c12', 'title'=>'', 'style'=>'solid'],
+                        ['icon'=>'fa-gem',         'color'=>'#00cec9', 'title'=>'', 'style'=>'solid'],
+                        ['icon'=>'fa-shield',      'color'=>'#636e72', 'title'=>'', 'style'=>'solid'],
+                        ['icon'=>'fa-sun',         'color'=>'#fdcb6e', 'title'=>'', 'style'=>'solid'],
+                        ['icon'=>'fa-house',       'color'=>'#6c5ce7', 'title'=>'', 'style'=>'solid'],
+                        ['icon'=>'fa-pagelines',   'color'=>'#27ae60', 'title'=>'', 'style'=>'brands'],
+                        ['icon'=>'fa-snowflake',   'color'=>'#74b9ff', 'title'=>'', 'style'=>'solid'],
+                        ['icon'=>'fa-temperature-full','color'=>'#e74c3c','title'=>'','style'=>'solid'],
+                        ['icon'=>'fa-trophy',      'color'=>'#f39c12', 'title'=>'', 'style'=>'solid'],
+                        ['icon'=>'fa-flask',       'color'=>'#6c5ce7', 'title'=>'', 'style'=>'solid'],
+                        ['icon'=>'fa-vial',        'color'=>'#00b894', 'title'=>'', 'style'=>'solid'],
+                        ['icon'=>'fa-mortar-pestle','color'=>'#636e72', 'title'=>'', 'style'=>'solid'],
+                        ['icon'=>'fa-hand-holding-seedling','color'=>'#2ecc71','title'=>'','style'=>'solid'],
+                    ];
+                    // SVG badge for Regulaer
+                    echo '<span class="mrh-pa-quickpick-btn" data-icon="svg:' . $mrh_pa_badge_base . 'male.svg" data-color="" data-title="" data-type="svg" data-style="" onclick="mrhPaQuickPick(this)">';
+                    echo '<img class="qp-svg" src="/' . $mrh_pa_badge_base . 'male.svg" alt="M">';
+                    echo '<span class="qp-edit" onclick="event.stopPropagation()">';
+                    echo '<input type="text" class="qp-title-input" placeholder="Text (optional)" value="" onchange="mrhPaQpEditTitle(this)">';
+                    echo '<input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px';
+                    echo '</span></span>';
+                    
+                    foreach ($mrh_pa_qp_badges as $qp) {
+                        $faPrefix = $qp['style'] === 'brands' ? 'fa-brands' : ($qp['style'] === 'regular' ? 'fa-regular' : 'fa-solid');
+                        echo '<span class="mrh-pa-quickpick-btn" data-icon="' . $qp['icon'] . '" data-color="' . $qp['color'] . '" data-title="' . $qp['title'] . '" data-type="fa" data-style="' . $qp['style'] . '" onclick="mrhPaQuickPick(this)">';
+                        echo '<span class="' . $faPrefix . ' ' . $qp['icon'] . '" style="color:' . $qp['color'] . '"></span>';
+                        echo '<span class="qp-edit" onclick="event.stopPropagation()">';
+                        echo '<input type="text" class="qp-title-input" placeholder="Text (optional)" value="" onchange="mrhPaQpEditTitle(this)">';
+                        echo '<input type="color" class="qp-color" value="' . $qp['color'] . '" onchange="mrhPaQpEditColor(this)">';
+                        echo '<input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px';
+                        echo '</span></span>';
+                    }
+                    ?>
                 </div>
             </div>
             
-            <!-- Icon Library with Search -->
+            <!-- Icon Library with Search + Style Switcher -->
             <div class="mrh-pa-icon-library">
                 <div class="mrh-pa-icon-library-header">
-                    <span class="lib-title"><span class="fa fa-search"></span> Icon-Bibliothek</span>
-                    <input type="text" id="mrh-pa-icon-search" placeholder="Icon suchen... (z.B. leaf, star, heart, trophy)" oninput="mrhPaFilterLibrary(this.value)">
-                    <span class="lib-count" id="mrh-pa-icon-lib-count">730 Icons</span>
+                    <span class="lib-title"><span class="fa-solid fa-magnifying-glass"></span> Icon-Bibliothek (FA 7)</span>
+                    <div class="mrh-pa-style-switcher">
+                        <button type="button" class="mrh-pa-style-btn active" data-style="solid" onclick="mrhPaSwitchStyle('solid')">Solid</button>
+                        <button type="button" class="mrh-pa-style-btn" data-style="regular" onclick="mrhPaSwitchStyle('regular')">Regular</button>
+                        <button type="button" class="mrh-pa-style-btn" data-style="brands" onclick="mrhPaSwitchStyle('brands')">Brands</button>
+                        <button type="button" class="mrh-pa-style-btn" data-style="all" onclick="mrhPaSwitchStyle('all')">Alle</button>
+                    </div>
+                    <input type="text" id="mrh-pa-icon-search" placeholder="Icon suchen... (z.B. cannabis, leaf, bong, star)" oninput="mrhPaFilterLibrary(this.value)">
+                    <span class="lib-count" id="mrh-pa-icon-lib-count">5300+ Icons</span>
                 </div>
                 <div class="mrh-pa-icon-add-controls" id="mrh-pa-icon-add-controls">
                     <label>Titel:</label>
@@ -713,11 +662,11 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
         <!-- Action Buttons -->
         <div class="mrh-pa-actions">
             <button type="button" class="mrh-pa-btn-save" id="mrh-pa-save-btn" onclick="mrhPaSaveAll()">
-                <span class="fa fa-floppy-o"></span> MRH Eigenschaften speichern
+                <span class="fa-solid fa-floppy-disk"></span> MRH Eigenschaften speichern
             </button>
             <span class="mrh-pa-save-status" id="mrh-pa-save-status"></span>
             <button type="button" class="mrh-pa-btn mrh-pa-btn-ai" onclick="mrhPaAiFill(<?php echo $mrh_pa_products_id; ?>)" style="margin-left:auto;">
-                <span class="fa fa-magic"></span> <?php echo defined('MRH_PA_BUTTON_AI_FILL') ? MRH_PA_BUTTON_AI_FILL : 'Mit KI befuellen'; ?>
+                <span class="fa-solid fa-wand-magic-sparkles"></span> <?php echo defined('MRH_PA_BUTTON_AI_FILL') ? MRH_PA_BUTTON_AI_FILL : 'Mit KI befuellen'; ?>
             </button>
             <div id="mrh-pa-ai-status" style="display:none;font-size:12px;color:#666;align-self:center;"></div>
         </div>
@@ -731,36 +680,26 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
 
 <script>
 // ============================================================
-// FONTAWESOME 4.7 COMPLETE ICON LIST (730 icons)
+// FONTAWESOME 7 COMPLETE ICON LIST (5300+ icons with style info)
 // ============================================================
 var mrhPaAllIcons = <?php
-$mrh_pa_fa_icons = [];
-$mrh_pa_fa_css_paths = [
-    DIR_FS_CATALOG . 'includes/external/mailhive/common/css/font-awesome/css/font-awesome.css',
-    DIR_FS_CATALOG . 'templates/' . CURRENT_TEMPLATE . '/css/font-awesome.min.css',
-    DIR_FS_CATALOG . 'templates/' . CURRENT_TEMPLATE . '/css/font-awesome.css',
-];
-foreach ($mrh_pa_fa_css_paths as $mrh_pa_fa_path) {
-    if (file_exists($mrh_pa_fa_path)) {
-        $mrh_pa_fa_css = file_get_contents($mrh_pa_fa_path);
-        if (preg_match_all('/\.(fa-[a-z0-9-]+):before/', $mrh_pa_fa_css, $mrh_pa_fa_matches)) {
-            $mrh_pa_fa_icons = array_values(array_unique($mrh_pa_fa_matches[1]));
-        }
-        break;
-    }
+$mrh_pa_fa7_json = DIR_FS_CATALOG . 'includes/external/mrh_product_attributes/fa7_icons.json';
+if (file_exists($mrh_pa_fa7_json)) {
+    echo file_get_contents($mrh_pa_fa7_json);
+} else {
+    // Fallback: minimal icon set
+    echo json_encode([
+        ['n'=>'fa-leaf','s'=>['solid']],['n'=>'fa-star','s'=>['solid','regular']],['n'=>'fa-heart','s'=>['solid','regular']],
+        ['n'=>'fa-fire','s'=>['solid']],['n'=>'fa-bolt','s'=>['solid']],['n'=>'fa-trophy','s'=>['solid']],
+        ['n'=>'fa-kit-medical','s'=>['solid']],['n'=>'fa-shield','s'=>['solid']],['n'=>'fa-gem','s'=>['solid','regular']],
+        ['n'=>'fa-eye','s'=>['solid','regular']],['n'=>'fa-venus','s'=>['solid']],['n'=>'fa-mars','s'=>['solid']],
+        ['n'=>'fa-house','s'=>['solid']],['n'=>'fa-sun','s'=>['solid','regular']],['n'=>'fa-cannabis','s'=>['solid']],
+        ['n'=>'fa-bong','s'=>['solid']],['n'=>'fa-joint','s'=>['solid']],['n'=>'fa-seedling','s'=>['solid']],
+        ['n'=>'fa-snowflake','s'=>['solid','regular']],['n'=>'fa-temperature-full','s'=>['solid']]
+    ]);
 }
-if (empty($mrh_pa_fa_icons)) {
-    $mrh_pa_fa_json = DIR_FS_CATALOG . 'includes/external/mrh_product_attributes/fa47_icons.json';
-    if (file_exists($mrh_pa_fa_json)) {
-        $mrh_pa_fa_icons = json_decode(file_get_contents($mrh_pa_fa_json), true) ?: [];
-    }
-}
-if (empty($mrh_pa_fa_icons)) {
-    $mrh_pa_fa_icons = ['fa-leaf','fa-star','fa-heart','fa-fire','fa-bolt','fa-trophy','fa-medkit','fa-shield','fa-diamond','fa-eye','fa-venus','fa-mars','fa-home','fa-sun-o','fa-pagelines','fa-snowflake-o'];
-}
-sort($mrh_pa_fa_icons);
-echo json_encode($mrh_pa_fa_icons);
 ?>;
+var mrhPaCurrentStyle = 'solid'; // Default style filter
 
 var mrhPaBadgeBase = '<?php echo $mrh_pa_badge_base; ?>';
 
@@ -799,7 +738,9 @@ function mrhPaRenderIcons() {
         if (mrhPaIsSvg(iconVal)) {
             previewHtml = '<img class="icon-preview-svg" src="' + mrhPaEsc(mrhPaSvgUrl(iconVal)) + '" style="width:' + sizeNum + 'px;height:' + sizeNum + 'px">';
         } else {
-            previewHtml = '<span class="icon-preview fa ' + mrhPaEsc(iconVal) + '" style="color:' + mrhPaEsc(p.color || '#333') + ';font-size:' + sizeNum + 'px"></span>';
+            var faStyle = (p.style || 'solid');
+            var faPrefix = faStyle === 'brands' ? 'fa-brands' : (faStyle === 'regular' ? 'fa-regular' : 'fa-solid');
+            previewHtml = '<span class="icon-preview ' + faPrefix + ' ' + mrhPaEsc(iconVal) + '" style="color:' + mrhPaEsc(p.color || '#333') + ';font-size:' + sizeNum + 'px"></span>';
         }
         
         var colorHtml = mrhPaIsSvg(iconVal) ? '' : '<input type="color" class="icon-edit-color" value="' + mrhPaEsc(p.color || '#333333') + '" onchange="mrhPaEditIconColor(' + i + ', this.value)" title="Farbe aendern">';
@@ -893,10 +834,11 @@ function mrhPaInitDragDrop() {
     });
 }
 
-function mrhPaAddIconFromLibrary(iconClass) {
+function mrhPaAddIconFromLibrary(iconClass, style) {
+    style = style || mrhPaCurrentStyle || 'solid';
     var existIdx = -1;
     for (var i = 0; i < mrhPaCurrentPictos.length; i++) {
-        var existing = (mrhPaCurrentPictos[i].icon || '').replace(/^fa\s+/, '');
+        var existing = (mrhPaCurrentPictos[i].icon || '').replace(/^fa[- ](?:solid|regular|brands|fw)\s*/g, '').replace(/^fa\s+/, '');
         if (existing === iconClass || existing === iconClass.replace('fa-', '')) {
             existIdx = i;
             break;
@@ -914,7 +856,8 @@ function mrhPaAddIconFromLibrary(iconClass) {
             icon: iconClass,
             color: color,
             size: sizeVal + 'px',
-            title: title
+            title: title,
+            style: style
         });
         
         document.getElementById('mrh-pa-add-title').value = '';
@@ -931,16 +874,41 @@ function mrhPaBuildLibrary() {
     if (!grid) return;
     
     var html = '';
+    var visibleCount = 0;
     for (var i = 0; i < mrhPaAllIcons.length; i++) {
-        var icon = mrhPaAllIcons[i];
-        var name = icon.replace('fa-', '');
-        html += '<div class="mrh-pa-icon-lib-btn" data-icon="' + icon + '" data-name="' + name + '" onclick="mrhPaAddIconFromLibrary(\'' + icon + '\')">' +
-            '<span class="fa ' + icon + '"></span>' +
+        var iconObj = mrhPaAllIcons[i];
+        var iconName = iconObj.n;
+        var styles = iconObj.s || ['solid'];
+        var name = iconName.replace('fa-', '');
+        var hasStyle = styles.indexOf(mrhPaCurrentStyle) !== -1;
+        if (!hasStyle && mrhPaCurrentStyle !== 'all') continue;
+        
+        var faPrefix = mrhPaCurrentStyle === 'brands' ? 'fa-brands' : (mrhPaCurrentStyle === 'regular' ? 'fa-regular' : 'fa-solid');
+        if (mrhPaCurrentStyle === 'all') faPrefix = styles.indexOf('solid') !== -1 ? 'fa-solid' : (styles.indexOf('regular') !== -1 ? 'fa-regular' : 'fa-brands');
+        var styleTag = styles.join(',');
+        
+        html += '<div class="mrh-pa-icon-lib-btn" data-icon="' + iconName + '" data-name="' + name + '" data-styles="' + styleTag + '" onclick="mrhPaAddIconFromLibrary(\'' + iconName + '\', \'' + (mrhPaCurrentStyle === 'all' ? 'solid' : mrhPaCurrentStyle) + '\')">' +
+            '<span class="' + faPrefix + ' ' + iconName + '"></span>' +
             '<span class="icon-name">' + name + '</span>' +
             '</div>';
+        visibleCount++;
     }
     grid.innerHTML = html;
+    var countEl = document.getElementById('mrh-pa-icon-lib-count');
+    if (countEl) countEl.textContent = visibleCount + ' Icons';
     mrhPaUpdateLibrarySelection();
+}
+
+function mrhPaSwitchStyle(style) {
+    mrhPaCurrentStyle = style;
+    var btns = document.querySelectorAll('.mrh-pa-style-btn');
+    for (var i = 0; i < btns.length; i++) {
+        btns[i].classList.toggle('active', btns[i].getAttribute('data-style') === style);
+    }
+    mrhPaBuildLibrary();
+    // Re-apply search filter if any
+    var searchEl = document.getElementById('mrh-pa-icon-search');
+    if (searchEl && searchEl.value.trim()) mrhPaFilterLibrary(searchEl.value);
 }
 
 function mrhPaFilterLibrary(query) {
@@ -966,7 +934,7 @@ function mrhPaUpdateLibrarySelection() {
     for (var i = 0; i < buttons.length; i++) {
         var icon = buttons[i].getAttribute('data-icon');
         var isSelected = mrhPaCurrentPictos.some(function(p) {
-            var existing = (p.icon || '').replace(/^fa\s+/, '');
+            var existing = (p.icon || '').replace(/^fa[- ](?:solid|regular|brands|fw)\s*/g, '').replace(/^fa\s+/, '');
             return existing === icon || existing === icon.replace('fa-', '');
         });
         buttons[i].classList.toggle('selected', isSelected);
@@ -978,17 +946,19 @@ function mrhPaUpdateLibrarySelection() {
 // ============================================================
 function mrhPaQuickPick(el) {
     var iconVal = el.getAttribute('data-icon');
-    var title = el.getAttribute('data-title') || '';
+    var style = el.getAttribute('data-style') || 'solid';
     
+    var titleInput = el.querySelector('.qp-title-input');
     var colorInput = el.querySelector('.qp-color');
     var sizeInput = el.querySelector('.qp-size-input');
+    var title = titleInput ? titleInput.value.trim() : (el.getAttribute('data-title') || '');
     var color = colorInput ? colorInput.value : (el.getAttribute('data-color') || '#333333');
     var sizeNum = sizeInput ? parseInt(sizeInput.value) || 16 : 16;
     
     // Check if already in current pictos
     var existIdx = -1;
     for (var i = 0; i < mrhPaCurrentPictos.length; i++) {
-        var existing = (mrhPaCurrentPictos[i].icon || '').replace(/^fa\s+/, '');
+        var existing = (mrhPaCurrentPictos[i].icon || '').replace(/^fa[- ](?:solid|regular|brands|fw)\s*/g, '').replace(/^fa\s+/, '');
         if (existing === iconVal) {
             existIdx = i;
             break;
@@ -1002,11 +972,29 @@ function mrhPaQuickPick(el) {
             icon: iconVal,
             color: color,
             size: sizeNum + 'px',
-            title: title
+            title: title,
+            style: style
         });
     }
     
     mrhPaRenderIcons();
+}
+
+function mrhPaQpEditTitle(input) {
+    var btn = input.closest('.mrh-pa-quickpick-btn');
+    if (!btn) return;
+    var iconVal = btn.getAttribute('data-icon');
+    var newTitle = input.value.trim();
+    btn.setAttribute('data-title', newTitle);
+    
+    for (var i = 0; i < mrhPaCurrentPictos.length; i++) {
+        var existing = (mrhPaCurrentPictos[i].icon || '').replace(/^fa[- ](?:solid|regular|brands|fw)\s*/g, '').replace(/^fa\s+/, '');
+        if (existing === iconVal) {
+            mrhPaCurrentPictos[i].title = newTitle;
+            mrhPaRenderIcons();
+            return;
+        }
+    }
 }
 
 function mrhPaQpEditColor(input) {
@@ -1015,12 +1003,12 @@ function mrhPaQpEditColor(input) {
     var iconVal = btn.getAttribute('data-icon');
     var newColor = input.value;
     
-    var iconEl = btn.querySelector('.fa');
+    var iconEl = btn.querySelector('[class*="fa-"]');
     if (iconEl) iconEl.style.color = newColor;
     btn.setAttribute('data-color', newColor);
     
     for (var i = 0; i < mrhPaCurrentPictos.length; i++) {
-        var existing = (mrhPaCurrentPictos[i].icon || '').replace(/^fa\s+/, '');
+        var existing = (mrhPaCurrentPictos[i].icon || '').replace(/^fa[- ](?:solid|regular|brands|fw)\s*/g, '').replace(/^fa\s+/, '');
         if (existing === iconVal) {
             mrhPaCurrentPictos[i].color = newColor;
             mrhPaRenderIcons();
@@ -1036,7 +1024,7 @@ function mrhPaQpEditSize(input) {
     var newSize = (parseInt(input.value) || 16) + 'px';
     
     for (var i = 0; i < mrhPaCurrentPictos.length; i++) {
-        var existing = (mrhPaCurrentPictos[i].icon || '').replace(/^fa\s+/, '');
+        var existing = (mrhPaCurrentPictos[i].icon || '').replace(/^fa[- ](?:solid|regular|brands|fw)\s*/g, '').replace(/^fa\s+/, '');
         if (existing === iconVal) {
             mrhPaCurrentPictos[i].size = newSize;
             mrhPaRenderIcons();
@@ -1051,18 +1039,20 @@ function mrhPaUpdateQuickPick() {
         var icon = btns[i].getAttribute('data-icon');
         var matchedPicto = null;
         for (var j = 0; j < mrhPaCurrentPictos.length; j++) {
-            var existing = (mrhPaCurrentPictos[j].icon || '').replace(/^fa\s+/, '');
+            var existing = (mrhPaCurrentPictos[j].icon || '').replace(/^fa[- ](?:solid|regular|brands|fw)\s*/g, '').replace(/^fa\s+/, '');
             if (existing === icon) { matchedPicto = mrhPaCurrentPictos[j]; break; }
         }
         var isActive = !!matchedPicto;
         btns[i].classList.toggle('active', isActive);
         
         if (isActive && matchedPicto) {
+            var titleInput = btns[i].querySelector('.qp-title-input');
             var colorInput = btns[i].querySelector('.qp-color');
             var sizeInput = btns[i].querySelector('.qp-size-input');
+            if (titleInput) titleInput.value = matchedPicto.title || '';
             if (colorInput) colorInput.value = matchedPicto.color || '#333333';
             if (sizeInput) sizeInput.value = parseInt(matchedPicto.size) || 16;
-            var iconEl = btns[i].querySelector('.fa');
+            var iconEl = btns[i].querySelector('[class*="fa-"]');
             if (iconEl) iconEl.style.color = matchedPicto.color || '#333333';
         }
     }
@@ -1082,7 +1072,7 @@ function mrhPaUpdateCupsPreview() {
     var trophyCount = Math.min(count, 3);
     for (var i = 0; i < trophyCount; i++) {
         var span = document.createElement('span');
-        span.className = 'fa fa-trophy';
+        span.className = 'fa-solid fa-trophy';
         preview.appendChild(span);
     }
     
@@ -1280,7 +1270,7 @@ function mrhPaSaveAll() {
     if (!btn) return;
     
     btn.disabled = true;
-    btn.innerHTML = '<span class="fa fa-spinner fa-spin"></span> Speichern...';
+    btn.innerHTML = '<span class="fa-solid fa-spinner fa-spin"></span> Speichern...';
     status.innerHTML = '';
     status.style.color = '#666';
     
@@ -1336,7 +1326,7 @@ function mrhPaSaveAll() {
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
             btn.disabled = false;
-            btn.innerHTML = '<span class="fa fa-floppy-o"></span> MRH Eigenschaften speichern';
+            btn.innerHTML = '<span class="fa-solid fa-floppy-disk"></span> MRH Eigenschaften speichern';
             
             if (xhr.status === 200) {
                 try {

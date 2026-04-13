@@ -59,11 +59,14 @@ if ($action === 'save_product' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $pictos = [];
         foreach ($payload['pictos'] as $p) {
             if (!empty($p['icon'])) {
+                $style_val = $p['style'] ?? 'solid';
+                if (!in_array($style_val, ['solid', 'regular', 'brands'])) $style_val = 'solid';
                 $pictos[] = [
                     'icon'  => preg_replace('/[^a-zA-Z0-9\-\.\/\:_ ]/', '', $p['icon'] ?? ''),
                     'color' => preg_replace('/[^a-zA-Z0-9#]/', '', $p['color'] ?? '#333333'),
                     'size'  => preg_replace('/[^a-zA-Z0-9.px]/', '', $p['size'] ?? '16px'),
                     'title' => mb_substr(strip_tags($p['title'] ?? ''), 0, 100),
+                    'style' => $style_val,
                 ];
             }
         }

@@ -6,7 +6,7 @@
  * for structured product attributes (gender, THC, CBD, cross, etc.)
  *
  * @package MRH_Product_Attributes
- * @version 1.4.0
+ * @version 1.5.0
  */
 
 if (!defined('_VALID_XTC')) { return; }
@@ -14,7 +14,7 @@ if (!defined('_VALID_XTC')) { return; }
 class MrhProductAttributes {
     
     /** @var string Module version */
-    const VERSION = '1.4.0';
+    const VERSION = '1.5.0';
     
     /** @var string DB table name */
     const TABLE = 'mrh_product_attributes';
@@ -585,7 +585,7 @@ class MrhProductAttributes {
         if ($flowering === 'autoflower') {
             $badges[] = self::badgeSpan('auto', 'fa-bolt', self::translateSelectValue('flowering_type', 'autoflower'));
         } elseif ($flowering === 'photoperiod') {
-            $badges[] = self::badgeSpan('photo', 'fa-sun-o', self::translateSelectValue('flowering_type', 'photoperiod'));
+            $badges[] = self::badgeSpan('photo', 'fa-sun', self::translateSelectValue('flowering_type', 'photoperiod'));
         }
         
         // 3. Custom picto icons from DB (supports FA classes and SVG paths)
@@ -618,17 +618,23 @@ class MrhProductAttributes {
                         'style="width:' . $size_px . 'px;height:' . $size_px . 'px;vertical-align:middle" class="mrh-badge-svg">' .
                         '</span>';
                 } else {
-                    // FontAwesome badge
+                    // FontAwesome badge (FA7 format: fa-solid/fa-regular/fa-brands)
                     $icon_class = $icon_val;
                     // Normalize icon class: ensure it starts with fa-
                     if (strpos($icon_class, 'fa-') === false && strpos($icon_class, 'fa ') === false) {
                         $icon_class = 'fa-' . $icon_class;
                     }
-                    // Remove "fa " prefix if present (we add it in the span)
-                    $icon_class = str_replace('fa ', '', $icon_class);
+                    // Remove legacy "fa " prefix if present
+                    $icon_class = preg_replace('/^fa\s+/', '', $icon_class);
                     
                     // Skip icons that duplicate the gender/flowering badges
-                    if (in_array($icon_class, ['fa-venus', 'fa-mars', 'fa-bolt', 'fa-sun-o'])) continue;
+                    if (in_array($icon_class, ['fa-venus', 'fa-mars', 'fa-bolt', 'fa-sun'])) continue;
+                    
+                    // Determine FA style prefix (FA7: fa-solid, fa-regular, fa-brands)
+                    $fa_style = $picto['style'] ?? 'solid';
+                    $fa_prefix = 'fa-solid';
+                    if ($fa_style === 'regular') $fa_prefix = 'fa-regular';
+                    elseif ($fa_style === 'brands') $fa_prefix = 'fa-brands';
                     
                     $style = '';
                     if ($color && $color !== '#333333' && $color !== '#333') {
@@ -641,7 +647,8 @@ class MrhProductAttributes {
                     
                     $badges[] = '<span class="mrh-type-badge mrh-badge-picto" title="' . htmlspecialchars($title) . '"' .
                         ($style ? ' style="' . $style . '"' : '') . '>' .
-                        '<span class="fa fa-fw ' . htmlspecialchars($icon_class) . '"></span>' .
+                        '<span class="' . $fa_prefix . ' fa-fw ' . htmlspecialchars($icon_class) . '"></span>' .
+                        ($title ? '<span class="mrh-badge-text">' . htmlspecialchars($title) . '</span>' : '') .
                         '</span>';
                 }
             }
@@ -654,7 +661,7 @@ class MrhProductAttributes {
             $cup_html = '<span class="mrh-type-badge mrh-badge-cup" title="' . htmlspecialchars($cup_title) . '">';
             $trophy_count = min($cups, 3);
             for ($t = 0; $t < $trophy_count; $t++) {
-                $cup_html .= '<span class="fa fa-fw fa-trophy"></span>';
+                $cup_html .= '<span class="fa-solid fa-fw fa-trophy"></span>';
             }
             if ($cups > 3) {
                 $cup_html .= '<span class="mrh-cup-count">' . $cups . '</span>';
@@ -673,9 +680,12 @@ class MrhProductAttributes {
     /**
      * Build a single badge span.
      */
-    private static function badgeSpan($type, $icon, $title) {
+    private static function badgeSpan($type, $icon, $title, $fa_style = 'solid') {
+        $fa_prefix = 'fa-solid';
+        if ($fa_style === 'regular') $fa_prefix = 'fa-regular';
+        elseif ($fa_style === 'brands') $fa_prefix = 'fa-brands';
         return '<span class="mrh-type-badge mrh-badge-' . $type . '" title="' . htmlspecialchars($title) . '">' 
-            . '<span class="fa fa-fw ' . $icon . '"></span>'
+            . '<span class="' . $fa_prefix . ' fa-fw ' . $icon . '"></span>'
             . '</span>';
     }
     
