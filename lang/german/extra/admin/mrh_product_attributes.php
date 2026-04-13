@@ -26,6 +26,7 @@ define('MRH_PA_TAB_STATS', 'Statistik');
 define('MRH_PA_PRESET_FEMINIZED', 'Feminisiert');
 define('MRH_PA_PRESET_AUTOFLOWER', 'Autoflowering');
 define('MRH_PA_PRESET_REGULAR', 'Regulaer');
+define('MRH_PA_PRESET_AUTO_REGULAR', 'Auto Regulaer');
 define('MRH_PA_PRESET_CUSTOM', 'Benutzerdefiniert');
 
 // Field labels

@@ -111,16 +111,20 @@ $mrh_pa_select_options = [
     padding: 15px; background: #fafafa; 
 }
 #mrh-pa-container .mrh-pa-preset-tabs { 
-    display: flex; gap: 5px; margin-bottom: 15px; 
+    display: flex; gap: 0; margin-bottom: 15px; 
+    border: 2px solid #2c3e50; border-radius: 6px; overflow: hidden;
 }
 #mrh-pa-container .mrh-pa-preset-tab {
-    padding: 8px 16px; border: 1px solid #ccc; border-radius: 4px;
-    background: #fff; cursor: pointer; font-size: 13px; transition: all 0.2s;
+    flex: 1; padding: 10px 12px; border: none; border-right: 1px solid #dee2e6;
+    background: #fff; cursor: pointer; font-size: 13px; font-weight: 600;
+    transition: all 0.2s; text-align: center; white-space: nowrap;
 }
+#mrh-pa-container .mrh-pa-preset-tab:last-child { border-right: none; }
 #mrh-pa-container .mrh-pa-preset-tab:hover { background: #e8f5e9; }
 #mrh-pa-container .mrh-pa-preset-tab.active { 
-    background: #27ae60; color: #fff; border-color: #27ae60; 
+    background: #27ae60; color: #fff; 
 }
+#mrh-pa-container .mrh-pa-preset-tab .fa { margin-right: 4px; }
 #mrh-pa-container .mrh-pa-lang-tabs {
     display: flex; gap: 3px; margin-bottom: 10px; border-bottom: 2px solid #27ae60;
 }
@@ -213,7 +217,7 @@ $mrh_pa_select_options = [
             </select>
         </div>
         
-        <!-- Preset Tabs (Feminized/Auto/Regular) -->
+        <!-- Preset Tabs (Feminized/Auto/Regular/Auto-Regular) -->
         <div class="mrh-pa-preset-tabs">
             <div class="mrh-pa-preset-tab" data-preset="feminized" onclick="mrhPaApplyPreset('feminized')">
                 <i class="fa fa-venus"></i> <?php echo defined('MRH_PA_PRESET_FEMINIZED') ? MRH_PA_PRESET_FEMINIZED : 'Feminisiert'; ?>
@@ -223,6 +227,9 @@ $mrh_pa_select_options = [
             </div>
             <div class="mrh-pa-preset-tab" data-preset="regular" onclick="mrhPaApplyPreset('regular')">
                 <i class="fa fa-mars-and-venus"></i> <?php echo defined('MRH_PA_PRESET_REGULAR') ? MRH_PA_PRESET_REGULAR : 'Regulaer'; ?>
+            </div>
+            <div class="mrh-pa-preset-tab" data-preset="auto_regular" onclick="mrhPaApplyPreset('auto_regular')">
+                <i class="fa fa-bolt"></i><i class="fa fa-mars-and-venus"></i> <?php echo defined('MRH_PA_PRESET_AUTO_REGULAR') ? MRH_PA_PRESET_AUTO_REGULAR : 'Auto Regulaer'; ?>
             </div>
         </div>
         
@@ -357,6 +364,9 @@ function mrhPaApplyPreset(preset) {
         } else if (preset === 'regular') {
             if (genderSel) genderSel.value = 'regular';
             if (flowerSel) flowerSel.value = 'photoperiod';
+        } else if (preset === 'auto_regular') {
+            if (genderSel) genderSel.value = 'regular';
+            if (flowerSel) flowerSel.value = 'autoflower';
         }
     });
 }
