@@ -763,6 +763,119 @@ var mrhPaCurrentStyle = 'solid'; // Default style filter
 
 var mrhPaBadgeBase = '<?php echo $mrh_pa_badge_base; ?>';
 
+// Badge configuration from server (global config)
+var mrhPaBadgeConfigs = <?php
+    $badge_configs_js = [];
+    if (class_exists('MrhProductAttributes')) {
+        foreach (array_keys(MrhProductAttributes::DEFAULT_BADGE_CONFIG) as $bk) {
+            $badge_configs_js[$bk] = MrhProductAttributes::getBadgeConfig($bk);
+        }
+    }
+    echo json_encode($badge_configs_js);
+?>;
+
+// Badge labels for preview
+var mrhPaBadgeLabels = {
+    'gender_feminized':       '<?php echo defined("MRH_PA_GENDER_FEMINIZED") ? MRH_PA_GENDER_FEMINIZED : "Feminisiert"; ?>',
+    'gender_regular':         '<?php echo defined("MRH_PA_GENDER_REGULAR") ? MRH_PA_GENDER_REGULAR : "Regulaer"; ?>',
+    'flowering_autoflower':   '<?php echo defined("MRH_PA_FLOWERING_AUTOFLOWER") ? MRH_PA_FLOWERING_AUTOFLOWER : "Autoflowering"; ?>',
+    'flowering_photoperiod':  '<?php echo defined("MRH_PA_FLOWERING_PHOTOPERIOD") ? MRH_PA_FLOWERING_PHOTOPERIOD : "Photoperiodisch"; ?>'
+};
+
+// Badge CSS classes for each type
+var mrhPaBadgeCssMap = {
+    'gender_feminized':       'mrh-badge-fem',
+    'gender_regular':         'mrh-badge-reg',
+    'flowering_autoflower':   'mrh-badge-auto',
+    'flowering_photoperiod':  'mrh-badge-photo'
+};
+
+function mrhPaUpdateAutoBadges() {
+    var bar = document.getElementById('mrh-pa-auto-badges-bar');
+    var empty = document.getElementById('mrh-pa-auto-badges-empty');
+    if (!bar) return;
+    
+    var firstPanel = document.querySelector('.mrh-pa-lang-panel');
+    if (!firstPanel) return;
+    var genderSel = firstPanel.querySelector('select[data-field="gender"]');
+    var flowerSel = firstPanel.querySelector('select[data-field="flowering_type"]');
+    var gender = genderSel ? genderSel.value : '';
+    var flower = flowerSel ? flowerSel.value : '';
+    
+    bar.innerHTML = '';
+    var badges = [];
+    
+    // Gender badge
+    if (gender === 'feminized') badges.push('gender_feminized');
+    else if (gender === 'regular') badges.push('gender_regular');
+    
+    // Flowering type badge
+    if (flower === 'autoflower') badges.push('flowering_autoflower');
+    else if (flower === 'photoperiod') badges.push('flowering_photoperiod');
+    
+    if (badges.length === 0) {
+        bar.innerHTML = '<span style="color:#999; font-size:12px;">Bitte Geschlecht &amp; Bluetentyp waehlen, um die Vorschau zu sehen.</span>';
+        return;
+    }
+    
+    for (var i = 0; i < badges.length; i++) {
+        var key = badges[i];
+        var cfg = mrhPaBadgeConfigs[key] || {};
+        var label = mrhPaBadgeLabels[key] || key;
+        var cssClass = mrhPaBadgeCssMap[key] || '';
+        var isTextOnly = cfg.text_only || false;
+        var showText = cfg.show_text || false;
+        var isSvg = cfg.is_svg || false;
+        var icon = cfg.icon || '';
+        var color = cfg.color || '';
+        
+        var span = document.createElement('span');
+        span.className = 'mrh-type-badge ' + cssClass;
+        if (isTextOnly) span.className += ' mrh-badge-textonly';
+        span.style.cssText = 'display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:20px; font-size:13px; font-weight:600; border:1px solid rgba(0,0,0,0.1);';
+        
+        if (!isTextOnly && icon) {
+            if (isSvg) {
+                var img = document.createElement('img');
+                img.src = '/' + icon;
+                img.style.cssText = 'width:16px; height:16px; vertical-align:middle;';
+                span.appendChild(img);
+            } else {
+                var ic = document.createElement('i');
+                var faPrefix = (cfg.style === 'brands') ? 'fa-brands' : 'fa-solid';
+                ic.className = faPrefix + ' ' + icon;
+                if (color) ic.style.color = color;
+                ic.style.fontSize = '14px';
+                span.appendChild(ic);
+            }
+        }
+        
+        if (isTextOnly || showText) {
+            var txt = document.createElement('span');
+            txt.className = 'mrh-badge-label';
+            txt.textContent = label;
+            txt.style.cssText = 'font-size:12px; font-weight:600;';
+            span.appendChild(txt);
+        }
+        
+        bar.appendChild(span);
+    }
+}
+
+// Bind change listeners for gender and flowering_type selects
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(function() {
+        var allPanels = document.querySelectorAll('.mrh-pa-lang-panel');
+        allPanels.forEach(function(panel) {
+            var gSel = panel.querySelector('select[data-field="gender"]');
+            var fSel = panel.querySelector('select[data-field="flowering_type"]');
+            if (gSel) gSel.addEventListener('change', function() { mrhPaUpdateAutoBadges(); mrhPaAutoDetectPreset(); });
+            if (fSel) fSel.addEventListener('change', function() { mrhPaUpdateAutoBadges(); mrhPaAutoDetectPreset(); });
+        });
+        mrhPaUpdateAutoBadges();
+    }, 100);
+});
+
 // ============================================================
 // PICTOS / ICON EDITOR v1.3.0
 // ============================================================
@@ -1544,6 +1657,7 @@ document.addEventListener('DOMContentLoaded', function() {
     mrhPaRenderIcons();
     mrhPaBuildLibrary();
     mrhPaAutoDetectPreset();
+    mrhPaUpdateAutoBadges();
     mrhPaUpdateCupsPreview();
     mrhPaInitFieldDragDrop();
     mrhPaInitAllCustomFieldDnD();
