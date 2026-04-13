@@ -6,7 +6,7 @@
  * for structured product attributes (gender, THC, CBD, cross, etc.)
  *
  * @package MRH_Product_Attributes
- * @version 1.1.0
+ * @version 1.3.0
  */
 
 if (!defined('_VALID_XTC')) { return; }
@@ -14,7 +14,7 @@ if (!defined('_VALID_XTC')) { return; }
 class MrhProductAttributes {
     
     /** @var string Module version */
-    const VERSION = '1.1.0';
+    const VERSION = '1.3.0';
     
     /** @var string DB table name */
     const TABLE = 'mrh_product_attributes';
@@ -546,11 +546,11 @@ class MrhProductAttributes {
         $gender = $attrs['gender'] ?? '';
         $flowering = $attrs['flowering_type'] ?? '';
         
-        // 1. Gender badge
+        // 1. Gender badge (Feminisiert = fa-venus, Regulaer = SVG male.svg)
         if ($gender === 'feminized') {
             $badges[] = self::badgeSpan('fem', 'fa-venus', self::translateSelectValue('gender', 'feminized'));
         } elseif ($gender === 'regular') {
-            $badges[] = self::badgeSpan('reg', 'fa-mars', self::translateSelectValue('gender', 'regular'));
+            $badges[] = self::badgeSpanSvg('reg', 'templates/tpl_mrh_2026/img/badges/male.svg', self::translateSelectValue('gender', 'regular'));
         } elseif ($gender === 'autoflower') {
             $badges[] = self::badgeSpan('fem', 'fa-venus', self::translateSelectValue('gender', 'autoflower'));
         }
@@ -562,7 +562,7 @@ class MrhProductAttributes {
             $badges[] = self::badgeSpan('photo', 'fa-sun-o', self::translateSelectValue('flowering_type', 'photoperiod'));
         }
         
-        // 3. Custom picto icons from DB
+        // 3. Custom picto icons from DB (supports FA classes and SVG paths)
         $pictos = [];
         if (!empty($attrs['pictos'])) {
             $pictos = is_array($attrs['pictos']) ? $attrs['pictos'] : (json_decode($attrs['pictos'], true) ?: []);
@@ -572,46 +572,65 @@ class MrhProductAttributes {
         
         if (!empty($pictos)) {
             foreach ($pictos as $picto) {
-                $icon_class = $picto['icon'] ?? '';
+                $icon_val = $picto['icon'] ?? '';
                 $color = $picto['color'] ?? '#333';
-                $size = $picto['size'] ?? '1em';
+                $size = $picto['size'] ?? '16px';
                 $title = $picto['title'] ?? '';
                 
-                if (empty($icon_class)) continue;
+                if (empty($icon_val)) continue;
                 
-                // Normalize icon class: ensure it starts with fa-
-                if (strpos($icon_class, 'fa-') === false && strpos($icon_class, 'fa ') === false) {
-                    $icon_class = 'fa-' . $icon_class;
+                // Check if SVG icon (starts with svg: or contains .svg)
+                $is_svg = (strpos($icon_val, 'svg:') === 0 || strpos($icon_val, '.svg') !== false);
+                
+                if ($is_svg) {
+                    // SVG badge
+                    $svg_path = str_replace('svg:', '', $icon_val);
+                    $svg_url = '/' . ltrim($svg_path, '/');
+                    $size_px = intval($size) ?: 16;
+                    $badges[] = '<span class="mrh-type-badge mrh-badge-picto" title="' . htmlspecialchars($title) . '">' .
+                        '<img src="' . htmlspecialchars($svg_url) . '" alt="' . htmlspecialchars($title) . '" ' .
+                        'style="width:' . $size_px . 'px;height:' . $size_px . 'px;vertical-align:middle" class="mrh-badge-svg">' .
+                        '</span>';
+                } else {
+                    // FontAwesome badge
+                    $icon_class = $icon_val;
+                    // Normalize icon class: ensure it starts with fa-
+                    if (strpos($icon_class, 'fa-') === false && strpos($icon_class, 'fa ') === false) {
+                        $icon_class = 'fa-' . $icon_class;
+                    }
+                    // Remove "fa " prefix if present (we add it in the span)
+                    $icon_class = str_replace('fa ', '', $icon_class);
+                    
+                    // Skip icons that duplicate the gender/flowering badges
+                    if (in_array($icon_class, ['fa-venus', 'fa-mars', 'fa-bolt', 'fa-sun-o'])) continue;
+                    
+                    $style = '';
+                    if ($color && $color !== '#333333' && $color !== '#333') {
+                        $style .= 'color:' . htmlspecialchars($color) . ';';
+                    }
+                    $size_px = intval($size) ?: 16;
+                    if ($size_px !== 16) {
+                        $style .= 'font-size:' . $size_px . 'px;';
+                    }
+                    
+                    $badges[] = '<span class="mrh-type-badge mrh-badge-picto" title="' . htmlspecialchars($title) . '"' .
+                        ($style ? ' style="' . $style . '"' : '') . '>' .
+                        '<span class="fa fa-fw ' . htmlspecialchars($icon_class) . '"></span>' .
+                        '</span>';
                 }
-                // Remove "fa " prefix if present (we add it in the span)
-                $icon_class = str_replace('fa ', '', $icon_class);
-                
-                // Skip icons that duplicate the gender/flowering badges
-                if (in_array($icon_class, ['fa-venus', 'fa-mars', 'fa-bolt', 'fa-sun-o'])) continue;
-                
-                $style = '';
-                if ($color && $color !== '#333333' && $color !== '#333') {
-                    $style .= 'color:' . htmlspecialchars($color) . ';';
-                }
-                if ($size && $size !== '1em') {
-                    $style .= 'font-size:' . htmlspecialchars($size) . ';';
-                }
-                
-                $badges[] = '<span class="mrh-type-badge mrh-badge-picto" title="' . htmlspecialchars($title) . '"' .
-                    ($style ? ' style="' . $style . '"' : '') . '>' .
-                    '<span class="fa fa-fw ' . htmlspecialchars($icon_class) . '"></span>' .
-                    '</span>';
             }
         }
         
-        // 4. Cannabis Cup trophy badge
+        // 4. Cannabis Cup trophy badge (max 3 trophies + number if > 3)
         $cups = (int)($attrs['cannabis_cups'] ?? 0);
         if ($cups > 0) {
             $cup_title = $cups . ' Cannabis Cup' . ($cups > 1 ? ' Awards' : ' Award');
             $cup_html = '<span class="mrh-type-badge mrh-badge-cup" title="' . htmlspecialchars($cup_title) . '">';
-            // Show trophy icon with count
-            $cup_html .= '<span class="fa fa-fw fa-trophy"></span>';
-            if ($cups > 1) {
+            $trophy_count = min($cups, 3);
+            for ($t = 0; $t < $trophy_count; $t++) {
+                $cup_html .= '<span class="fa fa-fw fa-trophy"></span>';
+            }
+            if ($cups > 3) {
                 $cup_html .= '<span class="mrh-cup-count">' . $cups . '</span>';
             }
             $cup_html .= '</span>';
@@ -629,8 +648,18 @@ class MrhProductAttributes {
      * Build a single badge span.
      */
     private static function badgeSpan($type, $icon, $title) {
-        return '<span class="mrh-type-badge mrh-badge-' . $type . '" title="' . htmlspecialchars($title) . '">'
+        return '<span class="mrh-type-badge mrh-badge-' . $type . '" title="' . htmlspecialchars($title) . '">' 
             . '<span class="fa fa-fw ' . $icon . '"></span>'
+            . '</span>';
+    }
+    
+    /**
+     * Build a single SVG badge span.
+     */
+    private static function badgeSpanSvg($type, $svg_path, $title) {
+        $svg_url = '/' . ltrim($svg_path, '/');
+        return '<span class="mrh-type-badge mrh-badge-' . $type . '" title="' . htmlspecialchars($title) . '">' 
+            . '<img src="' . htmlspecialchars($svg_url) . '" alt="' . htmlspecialchars($title) . '" style="width:14px;height:14px;vertical-align:middle" class="mrh-badge-svg">'
             . '</span>';
     }
     

@@ -16,7 +16,7 @@
  * - cannabis_cups (integer trophy count)
  *
  * @package MRH_Product_Attributes
- * @version 1.1.0
+ * @version 1.3.0
  */
 
 if (!defined('_VALID_XTC')) { return; }
@@ -46,10 +46,11 @@ if (isset($_POST['mrh_pa']) && !empty($_POST['mrh_pa']['products_id'])) {
                 $mrh_pa_pictos = [];
                 foreach ($mrh_pa_pictos_decoded as $p) {
                     if (!empty($p['icon'])) {
+                        // Allow FA classes (fa-xxx) AND SVG paths (svg:templates/.../*.svg)
                         $mrh_pa_pictos[] = [
-                            'icon'  => preg_replace('/[^a-zA-Z0-9\- ]/', '', $p['icon'] ?? ''),
+                            'icon'  => preg_replace('/[^a-zA-Z0-9\-\.\/\:_ ]/', '', $p['icon'] ?? ''),
                             'color' => preg_replace('/[^a-zA-Z0-9#]/', '', $p['color'] ?? '#333333'),
-                            'size'  => preg_replace('/[^a-zA-Z0-9.]/', '', $p['size'] ?? '1em'),
+                            'size'  => preg_replace('/[^a-zA-Z0-9.px]/', '', $p['size'] ?? '16px'),
                             'title' => mb_substr(strip_tags($p['title'] ?? ''), 0, 100),
                         ];
                     }
@@ -58,7 +59,7 @@ if (isset($_POST['mrh_pa']) && !empty($_POST['mrh_pa']['products_id'])) {
         }
         
         // Cannabis Cups (global, not per language)
-        $mrh_pa_cups = isset($_POST['mrh_pa']['cannabis_cups']) ? max(0, min(20, (int)$_POST['mrh_pa']['cannabis_cups'])) : 0;
+        $mrh_pa_cups = isset($_POST['mrh_pa']['cannabis_cups']) ? max(0, min(99, (int)$_POST['mrh_pa']['cannabis_cups'])) : 0;
         
         // If we're in the first language iteration, save all languages at once
         // (to avoid saving multiple times in the loop)

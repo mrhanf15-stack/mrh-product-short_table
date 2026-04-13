@@ -5,18 +5,20 @@
  * 
  * Injects the "Eigenschaften (MRH)" tab into the product edit form.
  *
- * Features v1.2.3:
+ * Features v1.3.0:
  * - 4 Preset buttons (Feminisiert | Autoflowering | Regulaer | Auto Regulaer)
  * - Language tabs with all standard fields
- * - FontAwesome Icon Editor with SEARCHABLE LIBRARY (730 icons)
- * - Inline editing of existing icons (color + size)
- * - Editable QuickPick icons (color picker + size selector per predefined icon)
- * - Cannabis Cup trophy count
+ * - FontAwesome Icon Editor with SEARCHABLE LIBRARY (730+ icons)
+ * - SVG icon support (Regulaer = male.svg, Feminisiert = fa-venus)
+ * - Numeric size input (px) instead of dropdown
+ * - Editable QuickPick icons (color picker + size per predefined icon)
+ * - Drag & Drop reordering of active icons
+ * - Cannabis Cup: max 3 trophies + number display
  * - AI fill button (single product)
  * - Auto-preset detection from loaded data
  *
  * @package MRH_Product_Attributes
- * @version 1.2.3
+ * @version 1.3.0
  */
 
 if (!defined('_VALID_XTC')) { return; }
@@ -123,12 +125,15 @@ if (!empty($mrh_pa_first_attr)) {
     elseif ($g === 'regular') $mrh_pa_detected_preset = 'regular';
     elseif ($g === 'feminized') $mrh_pa_detected_preset = 'feminized';
 }
+
+// SVG badge base URL
+$mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
 ?>
 
 <!-- FontAwesome 4.7 CDN (required for icon previews) -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
 
-<!-- MRH Product Attributes Tab v1.2.3 -->
+<!-- MRH Product Attributes Tab v1.3.0 -->
 <style>
 #mrh-pa-container { margin: 10px 0; padding: 0; }
 #mrh-pa-container .mrh-pa-header { 
@@ -153,6 +158,7 @@ if (!empty($mrh_pa_first_attr)) {
 #mrh-pa-container .mrh-pa-preset-tab:hover { background: #e8f5e9; }
 #mrh-pa-container .mrh-pa-preset-tab.active { background: #27ae60; color: #fff; }
 #mrh-pa-container .mrh-pa-preset-tab .fa { margin-right: 4px; }
+#mrh-pa-container .mrh-pa-preset-tab .preset-svg { width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; }
 #mrh-pa-container .mrh-pa-lang-tabs {
     display: flex; gap: 3px; margin-bottom: 10px; border-bottom: 2px solid #27ae60;
 }
@@ -199,15 +205,13 @@ if (!empty($mrh_pa_first_attr)) {
 #mrh-pa-container .mrh-pa-btn-add:hover { background: #f0fdf4; }
 #mrh-pa-container .mrh-pa-custom-fields { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ccc; }
 #mrh-pa-container .mrh-pa-status { font-size: 12px; color: #666; margin-top: 5px; }
-#mrh-pa-container .mrh-pa-status .badge { 
-    display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; 
-}
+#mrh-pa-container .mrh-pa-status .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
 #mrh-pa-container .mrh-pa-status .badge-success { background: #d4edda; color: #155724; }
 #mrh-pa-container .mrh-pa-status .badge-warning { background: #fff3cd; color: #856404; }
 #mrh-pa-container .mrh-pa-status .badge-info { background: #d1ecf1; color: #0c5460; }
 
 /* ================================================================ */
-/* ICON EDITOR v1.2.0 - Searchable Library + Inline Editing         */
+/* ICON EDITOR v1.3.0 - DnD, numeric size, SVG support              */
 /* ================================================================ */
 #mrh-pa-container .mrh-pa-icon-section {
     margin-top: 20px; padding: 15px; background: #fff; border: 2px solid #2c3e50; border-radius: 6px;
@@ -217,7 +221,7 @@ if (!empty($mrh_pa_first_attr)) {
     border-bottom: 2px solid #27ae60; padding-bottom: 8px;
 }
 
-/* Current icons list (editable) */
+/* Current icons list (editable + draggable) */
 #mrh-pa-container .mrh-pa-icon-list {
     display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; min-height: 44px;
     padding: 10px; background: #f8f9fa; border-radius: 6px; border: 2px dashed #dee2e6;
@@ -225,18 +229,21 @@ if (!empty($mrh_pa_first_attr)) {
 #mrh-pa-container .mrh-pa-icon-item {
     display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px;
     background: #fff; border: 1px solid #ddd; border-radius: 20px; font-size: 12px;
-    cursor: default; transition: all 0.2s; position: relative;
+    cursor: grab; transition: all 0.2s; position: relative; user-select: none;
 }
 #mrh-pa-container .mrh-pa-icon-item:hover { border-color: #27ae60; box-shadow: 0 2px 8px rgba(39,174,96,0.15); }
+#mrh-pa-container .mrh-pa-icon-item.dragging { opacity: 0.4; border-style: dashed; }
+#mrh-pa-container .mrh-pa-icon-item.drag-over { border-color: #e74c3c; box-shadow: 0 0 0 2px #e74c3c; }
 #mrh-pa-container .mrh-pa-icon-item .icon-preview { font-size: 18px; min-width: 20px; text-align: center; }
+#mrh-pa-container .mrh-pa-icon-item .icon-preview-svg { width: 18px; height: 18px; vertical-align: middle; }
 #mrh-pa-container .mrh-pa-icon-item .icon-title { font-weight: 500; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #mrh-pa-container .mrh-pa-icon-item .icon-edit-color {
     width: 24px; height: 24px; padding: 0; border: 1px solid #ccc; border-radius: 50%; 
     cursor: pointer; vertical-align: middle;
 }
 #mrh-pa-container .mrh-pa-icon-item .icon-edit-size {
-    padding: 2px 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 10px; 
-    background: #fff; cursor: pointer; width: 55px;
+    width: 50px; padding: 2px 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 11px;
+    background: #fff; text-align: center;
 }
 #mrh-pa-container .mrh-pa-icon-item .icon-remove {
     cursor: pointer; color: #e74c3c; font-weight: 700; margin-left: 2px;
@@ -244,6 +251,9 @@ if (!empty($mrh_pa_first_attr)) {
     border-radius: 50%; font-size: 14px; transition: all 0.15s;
 }
 #mrh-pa-container .mrh-pa-icon-item .icon-remove:hover { background: #fde8e8; }
+#mrh-pa-container .mrh-pa-icon-item .drag-handle {
+    cursor: grab; color: #aaa; font-size: 14px; margin-right: 2px;
+}
 
 /* Icon Library (searchable) */
 #mrh-pa-container .mrh-pa-icon-library {
@@ -252,16 +262,11 @@ if (!empty($mrh_pa_first_attr)) {
 #mrh-pa-container .mrh-pa-icon-library-header {
     background: #2c3e50; color: #fff; padding: 10px 14px; display: flex; align-items: center; gap: 10px;
 }
-#mrh-pa-container .mrh-pa-icon-library-header .lib-title {
-    font-weight: 600; font-size: 13px; white-space: nowrap;
-}
+#mrh-pa-container .mrh-pa-icon-library-header .lib-title { font-weight: 600; font-size: 13px; white-space: nowrap; }
 #mrh-pa-container .mrh-pa-icon-library-header input {
-    flex: 1; padding: 6px 10px; border: none; border-radius: 4px; font-size: 13px;
-    background: rgba(255,255,255,0.9);
+    flex: 1; padding: 6px 10px; border: none; border-radius: 4px; font-size: 13px; background: rgba(255,255,255,0.9);
 }
-#mrh-pa-container .mrh-pa-icon-library-header .lib-count {
-    font-size: 11px; opacity: 0.8; white-space: nowrap;
-}
+#mrh-pa-container .mrh-pa-icon-library-header .lib-count { font-size: 11px; opacity: 0.8; white-space: nowrap; }
 #mrh-pa-container .mrh-pa-icon-library-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 4px;
     padding: 10px; max-height: 320px; overflow-y: auto; background: #fafafa;
@@ -280,39 +285,32 @@ if (!empty($mrh_pa_first_attr)) {
 #mrh-pa-container .mrh-pa-quickpick {
     margin-bottom: 12px; padding: 10px; background: #eef7ee; border: 1px solid #c3e6c3; border-radius: 6px;
 }
-#mrh-pa-container .mrh-pa-quickpick-title {
-    font-size: 12px; font-weight: 700; color: #2c3e50; margin-bottom: 8px;
-}
-#mrh-pa-container .mrh-pa-quickpick-grid {
-    display: flex; flex-wrap: wrap; gap: 6px;
-}
+#mrh-pa-container .mrh-pa-quickpick-title { font-size: 12px; font-weight: 700; color: #2c3e50; margin-bottom: 8px; }
+#mrh-pa-container .mrh-pa-quickpick-grid { display: flex; flex-wrap: wrap; gap: 6px; }
 #mrh-pa-container .mrh-pa-quickpick-btn {
     display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px;
-    background: #fff; border: 1px solid #ddd; border-radius: 16px; cursor: pointer;
+    background: #fff; border: 2px solid #ddd; border-radius: 20px; cursor: pointer;
     font-size: 12px; transition: all 0.15s; white-space: nowrap;
 }
 #mrh-pa-container .mrh-pa-quickpick-btn:hover { border-color: #27ae60; background: #f0fdf4; transform: scale(1.03); }
 #mrh-pa-container .mrh-pa-quickpick-btn.active { border-color: #27ae60; background: #d4edda; box-shadow: 0 0 0 2px #27ae60; }
 #mrh-pa-container .mrh-pa-quickpick-btn .fa { font-size: 16px; }
+#mrh-pa-container .mrh-pa-quickpick-btn .qp-svg { width: 16px; height: 16px; vertical-align: middle; }
 #mrh-pa-container .mrh-pa-quickpick-btn .qp-edit { display: none; align-items: center; gap: 4px; margin-left: 4px; }
 #mrh-pa-container .mrh-pa-quickpick-btn.active .qp-edit { display: inline-flex; }
 #mrh-pa-container .mrh-pa-quickpick-btn .qp-color { width: 20px; height: 20px; padding: 0; border: 1px solid #aaa; border-radius: 50%; cursor: pointer; }
-#mrh-pa-container .mrh-pa-quickpick-btn .qp-size { padding: 1px 3px; border: 1px solid #aaa; border-radius: 3px; font-size: 9px; background: #fff; cursor: pointer; width: 50px; }
+#mrh-pa-container .mrh-pa-quickpick-btn .qp-size-input { width: 40px; padding: 1px 3px; border: 1px solid #aaa; border-radius: 3px; font-size: 10px; text-align: center; }
 
 /* Add icon controls */
 #mrh-pa-container .mrh-pa-icon-add-controls {
     display: flex; gap: 8px; align-items: center; margin-top: 10px; padding: 10px;
-    background: #f0fdf4; border: 1px solid #d4edda; border-radius: 6px; flex-wrap: wrap;
-}
-#mrh-pa-container .mrh-pa-icon-add-controls label { font-size: 12px; font-weight: 600; color: #555; }
-#mrh-pa-container .mrh-pa-icon-add-controls input[type="text"] {
-    padding: 5px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; width: 130px;
+    background: #f0f0f0; border-radius: 6px; font-size: 12px;
 }
 #mrh-pa-container .mrh-pa-icon-add-controls input[type="color"] {
     width: 32px; height: 28px; padding: 0; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;
 }
-#mrh-pa-container .mrh-pa-icon-add-controls select {
-    padding: 5px 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; background: #fff;
+#mrh-pa-container .mrh-pa-icon-add-controls input[type="number"] {
+    width: 55px; padding: 5px 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; text-align: center;
 }
 
 /* Cannabis Cup section */
@@ -322,15 +320,12 @@ if (!empty($mrh_pa_first_attr)) {
 #mrh-pa-container .mrh-pa-cups-section h4 {
     margin: 0 0 10px 0; font-size: 14px; color: #8a6d3b; font-weight: 700;
 }
-#mrh-pa-container .mrh-pa-cups-row {
-    display: flex; align-items: center; gap: 12px;
-}
+#mrh-pa-container .mrh-pa-cups-row { display: flex; align-items: center; gap: 12px; }
 #mrh-pa-container .mrh-pa-cups-row input[type="number"] {
     width: 80px; padding: 6px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;
 }
-#mrh-pa-container .mrh-pa-cups-preview {
-    display: flex; gap: 2px; font-size: 18px; color: #f39c12;
-}
+#mrh-pa-container .mrh-pa-cups-preview { display: flex; align-items: center; gap: 2px; font-size: 18px; color: #f39c12; }
+#mrh-pa-container .mrh-pa-cups-preview .cup-number { font-weight: 700; font-size: 16px; margin-left: 4px; color: #8a6d3b; }
 </style>
 
 <div id="mrh-pa-container">
@@ -378,10 +373,10 @@ if (!empty($mrh_pa_first_attr)) {
                 <span class="fa fa-bolt"></span> <?php echo defined('MRH_PA_PRESET_AUTOFLOWER') ? MRH_PA_PRESET_AUTOFLOWER : 'Autoflowering'; ?>
             </div>
             <div class="mrh-pa-preset-tab <?php echo $mrh_pa_detected_preset === 'regular' ? 'active' : ''; ?>" data-preset="regular" onclick="mrhPaApplyPreset('regular')">
-                <span class="fa fa-mars"></span> <?php echo defined('MRH_PA_PRESET_REGULAR') ? MRH_PA_PRESET_REGULAR : 'Regulaer'; ?>
+                <img class="preset-svg" src="/<?php echo $mrh_pa_badge_base; ?>male.svg" alt="M"> <?php echo defined('MRH_PA_PRESET_REGULAR') ? MRH_PA_PRESET_REGULAR : 'Regulaer'; ?>
             </div>
             <div class="mrh-pa-preset-tab <?php echo $mrh_pa_detected_preset === 'auto_regular' ? 'active' : ''; ?>" data-preset="auto_regular" onclick="mrhPaApplyPreset('auto_regular')">
-                <span class="fa fa-bolt"></span><span class="fa fa-mars"></span> <?php echo defined('MRH_PA_PRESET_AUTO_REGULAR') ? MRH_PA_PRESET_AUTO_REGULAR : 'Auto Regulaer'; ?>
+                <span class="fa fa-bolt"></span><img class="preset-svg" src="/<?php echo $mrh_pa_badge_base; ?>male.svg" alt="M"> <?php echo defined('MRH_PA_PRESET_AUTO_REGULAR') ? MRH_PA_PRESET_AUTO_REGULAR : 'Auto Regulaer'; ?>
             </div>
         </div>
         
@@ -480,13 +475,15 @@ if (!empty($mrh_pa_first_attr)) {
         <?php endforeach; ?>
         
         <!-- ============================================================ -->
-        <!-- ICON EDITOR v1.2.0 with Searchable Library                   -->
+        <!-- ICON EDITOR v1.3.0 with DnD, SVG, numeric size              -->
         <!-- ============================================================ -->
         <div class="mrh-pa-icon-section">
             <h4><span class="fa fa-paint-brush"></span> Picto-Icons (Badges) — Editor</h4>
             
-            <!-- Current icons list (editable inline) -->
-            <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:6px;">Aktuelle Icons (klicke Farbe/Groesse zum Bearbeiten):</div>
+            <!-- Current icons list (editable + draggable) -->
+            <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:6px;">
+                Aktuelle Icons (Drag &amp; Drop zum Sortieren, Farbe/Groesse klicken):
+            </div>
             <div class="mrh-pa-icon-list" id="mrh-pa-icon-list">
                 <span style="color:#999;font-size:12px;" id="mrh-pa-icon-empty">Keine Icons. Waehlen Sie aus der Bibliothek unten.</span>
             </div>
@@ -495,116 +492,115 @@ if (!empty($mrh_pa_first_attr)) {
             <div class="mrh-pa-quickpick">
                 <div class="mrh-pa-quickpick-title"><span class="fa fa-star"></span> Schnellauswahl — Cannabis-Icons (Klick zum Hinzufuegen/Entfernen)</div>
                 <div class="mrh-pa-quickpick-grid" id="mrh-pa-quickpick-grid">
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-medkit" data-color="#ff6666" data-title="Medical" onclick="mrhPaQuickPick(this)">
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-medkit" data-color="#ff6666" data-title="Medical" data-type="fa" onclick="mrhPaQuickPick(this)">
                         <span class="fa fa-medkit" style="color:#ff6666"></span> Medical
                         <span class="qp-edit" onclick="event.stopPropagation()">
                             <input type="color" class="qp-color" value="#ff6666" onchange="mrhPaQpEditColor(this)">
-                            <select class="qp-size" onchange="mrhPaQpEditSize(this)"><option value="1em">1em</option><option value="1.2em">1.2em</option><option value="1.5em">1.5em</option><option value="2em">2em</option></select>
+                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
                         </span>
                     </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-tachometer" data-color="#54B80D" data-title="Autoflowering" onclick="mrhPaQuickPick(this)">
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-tachometer" data-color="#54B80D" data-title="Autoflowering" data-type="fa" onclick="mrhPaQuickPick(this)">
                         <span class="fa fa-tachometer" style="color:#54B80D"></span> Autoflowering
                         <span class="qp-edit" onclick="event.stopPropagation()">
                             <input type="color" class="qp-color" value="#54B80D" onchange="mrhPaQpEditColor(this)">
-                            <select class="qp-size" onchange="mrhPaQpEditSize(this)"><option value="1em">1em</option><option value="1.2em">1.2em</option><option value="1.5em">1.5em</option><option value="2em">2em</option></select>
+                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
                         </span>
                     </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-female" data-color="#e84393" data-title="Feminisiert" onclick="mrhPaQuickPick(this)">
-                        <span class="fa fa-female" style="color:#e84393"></span> Feminisiert
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-venus" data-color="#e84393" data-title="Feminisiert" data-type="fa" onclick="mrhPaQuickPick(this)">
+                        <span class="fa fa-venus" style="color:#e84393"></span> Feminisiert
                         <span class="qp-edit" onclick="event.stopPropagation()">
                             <input type="color" class="qp-color" value="#e84393" onchange="mrhPaQpEditColor(this)">
-                            <select class="qp-size" onchange="mrhPaQpEditSize(this)"><option value="1em">1em</option><option value="1.2em">1.2em</option><option value="1.5em">1.5em</option><option value="2em">2em</option></select>
+                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
                         </span>
                     </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-mars" data-color="#0984e3" data-title="Regulaer" onclick="mrhPaQuickPick(this)">
-                        <span class="fa fa-mars" style="color:#0984e3"></span> Regulaer
+                    <span class="mrh-pa-quickpick-btn" data-icon="svg:<?php echo $mrh_pa_badge_base; ?>male.svg" data-color="" data-title="Regulaer" data-type="svg" onclick="mrhPaQuickPick(this)">
+                        <img class="qp-svg" src="/<?php echo $mrh_pa_badge_base; ?>male.svg" alt="M"> Regulaer
                         <span class="qp-edit" onclick="event.stopPropagation()">
-                            <input type="color" class="qp-color" value="#0984e3" onchange="mrhPaQpEditColor(this)">
-                            <select class="qp-size" onchange="mrhPaQpEditSize(this)"><option value="1em">1em</option><option value="1.2em">1.2em</option><option value="1.5em">1.5em</option><option value="2em">2em</option></select>
+                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
                         </span>
                     </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-leaf" data-color="#00b894" data-title="CBD-reich" onclick="mrhPaQuickPick(this)">
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-leaf" data-color="#00b894" data-title="CBD-reich" data-type="fa" onclick="mrhPaQuickPick(this)">
                         <span class="fa fa-leaf" style="color:#00b894"></span> CBD-reich
                         <span class="qp-edit" onclick="event.stopPropagation()">
                             <input type="color" class="qp-color" value="#00b894" onchange="mrhPaQpEditColor(this)">
-                            <select class="qp-size" onchange="mrhPaQpEditSize(this)"><option value="1em">1em</option><option value="1.2em">1.2em</option><option value="1.5em">1.5em</option><option value="2em">2em</option></select>
+                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
                         </span>
                     </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-fire" data-color="#d63031" data-title="Hoher THC" onclick="mrhPaQuickPick(this)">
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-fire" data-color="#d63031" data-title="Hoher THC" data-type="fa" onclick="mrhPaQuickPick(this)">
                         <span class="fa fa-fire" style="color:#d63031"></span> Hoher THC
                         <span class="qp-edit" onclick="event.stopPropagation()">
                             <input type="color" class="qp-color" value="#d63031" onchange="mrhPaQpEditColor(this)">
-                            <select class="qp-size" onchange="mrhPaQpEditSize(this)"><option value="1em">1em</option><option value="1.2em">1.2em</option><option value="1.5em">1.5em</option><option value="2em">2em</option></select>
+                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
                         </span>
                     </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-star" data-color="#f39c12" data-title="Bestseller" onclick="mrhPaQuickPick(this)">
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-star" data-color="#f39c12" data-title="Bestseller" data-type="fa" onclick="mrhPaQuickPick(this)">
                         <span class="fa fa-star" style="color:#f39c12"></span> Bestseller
                         <span class="qp-edit" onclick="event.stopPropagation()">
                             <input type="color" class="qp-color" value="#f39c12" onchange="mrhPaQpEditColor(this)">
-                            <select class="qp-size" onchange="mrhPaQpEditSize(this)"><option value="1em">1em</option><option value="1.2em">1.2em</option><option value="1.5em">1.5em</option><option value="2em">2em</option></select>
+                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
                         </span>
                     </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-diamond" data-color="#00cec9" data-title="Premium" onclick="mrhPaQuickPick(this)">
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-diamond" data-color="#00cec9" data-title="Premium" data-type="fa" onclick="mrhPaQuickPick(this)">
                         <span class="fa fa-diamond" style="color:#00cec9"></span> Premium
                         <span class="qp-edit" onclick="event.stopPropagation()">
                             <input type="color" class="qp-color" value="#00cec9" onchange="mrhPaQpEditColor(this)">
-                            <select class="qp-size" onchange="mrhPaQpEditSize(this)"><option value="1em">1em</option><option value="1.2em">1.2em</option><option value="1.5em">1.5em</option><option value="2em">2em</option></select>
+                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
                         </span>
                     </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-bolt" data-color="#e17055" data-title="Schnelle Bluete" onclick="mrhPaQuickPick(this)">
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-bolt" data-color="#e17055" data-title="Schnelle Bluete" data-type="fa" onclick="mrhPaQuickPick(this)">
                         <span class="fa fa-bolt" style="color:#e17055"></span> Schnelle Bluete
                         <span class="qp-edit" onclick="event.stopPropagation()">
                             <input type="color" class="qp-color" value="#e17055" onchange="mrhPaQpEditColor(this)">
-                            <select class="qp-size" onchange="mrhPaQpEditSize(this)"><option value="1em">1em</option><option value="1.2em">1.2em</option><option value="1.5em">1.5em</option><option value="2em">2em</option></select>
+                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
                         </span>
                     </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-shield" data-color="#636e72" data-title="Resistent" onclick="mrhPaQuickPick(this)">
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-shield" data-color="#636e72" data-title="Resistent" data-type="fa" onclick="mrhPaQuickPick(this)">
                         <span class="fa fa-shield" style="color:#636e72"></span> Resistent
                         <span class="qp-edit" onclick="event.stopPropagation()">
                             <input type="color" class="qp-color" value="#636e72" onchange="mrhPaQpEditColor(this)">
-                            <select class="qp-size" onchange="mrhPaQpEditSize(this)"><option value="1em">1em</option><option value="1.2em">1.2em</option><option value="1.5em">1.5em</option><option value="2em">2em</option></select>
+                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
                         </span>
                     </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-sun-o" data-color="#fdcb6e" data-title="Outdoor" onclick="mrhPaQuickPick(this)">
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-sun-o" data-color="#fdcb6e" data-title="Outdoor" data-type="fa" onclick="mrhPaQuickPick(this)">
                         <span class="fa fa-sun-o" style="color:#fdcb6e"></span> Outdoor
                         <span class="qp-edit" onclick="event.stopPropagation()">
                             <input type="color" class="qp-color" value="#fdcb6e" onchange="mrhPaQpEditColor(this)">
-                            <select class="qp-size" onchange="mrhPaQpEditSize(this)"><option value="1em">1em</option><option value="1.2em">1.2em</option><option value="1.5em">1.5em</option><option value="2em">2em</option></select>
+                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
                         </span>
                     </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-home" data-color="#6c5ce7" data-title="Indoor" onclick="mrhPaQuickPick(this)">
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-home" data-color="#6c5ce7" data-title="Indoor" data-type="fa" onclick="mrhPaQuickPick(this)">
                         <span class="fa fa-home" style="color:#6c5ce7"></span> Indoor
                         <span class="qp-edit" onclick="event.stopPropagation()">
                             <input type="color" class="qp-color" value="#6c5ce7" onchange="mrhPaQpEditColor(this)">
-                            <select class="qp-size" onchange="mrhPaQpEditSize(this)"><option value="1em">1em</option><option value="1.2em">1.2em</option><option value="1.5em">1.5em</option><option value="2em">2em</option></select>
+                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
                         </span>
                     </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-pagelines" data-color="#27ae60" data-title="Organic" onclick="mrhPaQuickPick(this)">
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-pagelines" data-color="#27ae60" data-title="Organic" data-type="fa" onclick="mrhPaQuickPick(this)">
                         <span class="fa fa-pagelines" style="color:#27ae60"></span> Organic
                         <span class="qp-edit" onclick="event.stopPropagation()">
                             <input type="color" class="qp-color" value="#27ae60" onchange="mrhPaQpEditColor(this)">
-                            <select class="qp-size" onchange="mrhPaQpEditSize(this)"><option value="1em">1em</option><option value="1.2em">1.2em</option><option value="1.5em">1.5em</option><option value="2em">2em</option></select>
+                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
                         </span>
                     </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-snowflake-o" data-color="#74b9ff" data-title="Kaltresistent" onclick="mrhPaQuickPick(this)">
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-snowflake-o" data-color="#74b9ff" data-title="Kaltresistent" data-type="fa" onclick="mrhPaQuickPick(this)">
                         <span class="fa fa-snowflake-o" style="color:#74b9ff"></span> Kaltresistent
                         <span class="qp-edit" onclick="event.stopPropagation()">
                             <input type="color" class="qp-color" value="#74b9ff" onchange="mrhPaQpEditColor(this)">
-                            <select class="qp-size" onchange="mrhPaQpEditSize(this)"><option value="1em">1em</option><option value="1.2em">1.2em</option><option value="1.5em">1.5em</option><option value="2em">2em</option></select>
+                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
                         </span>
                     </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-thermometer-full" data-color="#e74c3c" data-title="Hitzeresistent" onclick="mrhPaQuickPick(this)">
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-thermometer-full" data-color="#e74c3c" data-title="Hitzeresistent" data-type="fa" onclick="mrhPaQuickPick(this)">
                         <span class="fa fa-thermometer-full" style="color:#e74c3c"></span> Hitzeresistent
                         <span class="qp-edit" onclick="event.stopPropagation()">
                             <input type="color" class="qp-color" value="#e74c3c" onchange="mrhPaQpEditColor(this)">
-                            <select class="qp-size" onchange="mrhPaQpEditSize(this)"><option value="1em">1em</option><option value="1.2em">1.2em</option><option value="1.5em">1.5em</option><option value="2em">2em</option></select>
+                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
                         </span>
                     </span>
-                    <span class="mrh-pa-quickpick-btn" data-icon="fa-trophy" data-color="#f39c12" data-title="Preisgekroent" onclick="mrhPaQuickPick(this)">
+                    <span class="mrh-pa-quickpick-btn" data-icon="fa-trophy" data-color="#f39c12" data-title="Preisgekroent" data-type="fa" onclick="mrhPaQuickPick(this)">
                         <span class="fa fa-trophy" style="color:#f39c12"></span> Preisgekroent
                         <span class="qp-edit" onclick="event.stopPropagation()">
                             <input type="color" class="qp-color" value="#f39c12" onchange="mrhPaQpEditColor(this)">
-                            <select class="qp-size" onchange="mrhPaQpEditSize(this)"><option value="1em">1em</option><option value="1.2em">1.2em</option><option value="1.5em">1.5em</option><option value="2em">2em</option></select>
+                            <input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px
                         </span>
                     </span>
                 </div>
@@ -623,12 +619,7 @@ if (!empty($mrh_pa_first_attr)) {
                     <label>Farbe:</label>
                     <input type="color" id="mrh-pa-add-color" value="#333333">
                     <label>Groesse:</label>
-                    <select id="mrh-pa-add-size">
-                        <option value="1em">Normal (1em)</option>
-                        <option value="1.2em">Mittel (1.2em)</option>
-                        <option value="1.5em">Gross (1.5em)</option>
-                        <option value="2em">Sehr gross (2em)</option>
-                    </select>
+                    <input type="number" id="mrh-pa-add-size" value="16" min="10" max="48" style="width:55px"> px
                     <span style="font-size:11px;color:#666;">Klicke ein Icon unten zum Hinzufuegen</span>
                 </div>
                 <div class="mrh-pa-icon-library-grid" id="mrh-pa-icon-library-grid">
@@ -641,21 +632,18 @@ if (!empty($mrh_pa_first_attr)) {
         </div>
         
         <!-- ============================================================ -->
-        <!-- CANNABIS CUP TROPHIES                                        -->
+        <!-- CANNABIS CUP TROPHIES (max 3 + number)                       -->
         <!-- ============================================================ -->
         <div class="mrh-pa-cups-section">
             <h4><span class="fa fa-trophy" style="color:#f39c12"></span> Cannabis Cup Auszeichnungen</h4>
             <div class="mrh-pa-cups-row">
                 <label style="font-size:13px;font-weight:600;">Anzahl Pokale:</label>
                 <input type="number" name="mrh_pa[cannabis_cups]" id="mrh-pa-cups-input" 
-                       min="0" max="20" value="<?php echo $mrh_pa_cups; ?>"
+                       min="0" max="99" value="<?php echo $mrh_pa_cups; ?>"
                        onchange="mrhPaUpdateCupsPreview()" oninput="mrhPaUpdateCupsPreview()">
-                <div class="mrh-pa-cups-preview" id="mrh-pa-cups-preview">
-                    <?php for ($i = 0; $i < $mrh_pa_cups; $i++): ?>
-                        <span class="fa fa-trophy"></span>
-                    <?php endfor; ?>
-                </div>
+                <div class="mrh-pa-cups-preview" id="mrh-pa-cups-preview"></div>
             </div>
+            <div style="font-size:11px;color:#999;margin-top:6px;">1-3 = Pokale einzeln, ab 4 = 3 Pokale + Zahl</div>
         </div>
         
         <!-- Action Buttons -->
@@ -678,7 +666,6 @@ if (!empty($mrh_pa_first_attr)) {
 // FONTAWESOME 4.7 COMPLETE ICON LIST (730 icons)
 // ============================================================
 var mrhPaAllIcons = <?php
-// Try to parse all icon classes from the installed FontAwesome CSS on the server
 $mrh_pa_fa_icons = [];
 $mrh_pa_fa_css_paths = [
     DIR_FS_CATALOG . 'includes/external/mailhive/common/css/font-awesome/css/font-awesome.css',
@@ -694,25 +681,33 @@ foreach ($mrh_pa_fa_css_paths as $mrh_pa_fa_path) {
         break;
     }
 }
-// Fallback to JSON file if CSS parsing failed
 if (empty($mrh_pa_fa_icons)) {
     $mrh_pa_fa_json = DIR_FS_CATALOG . 'includes/external/mrh_product_attributes/fa47_icons.json';
     if (file_exists($mrh_pa_fa_json)) {
         $mrh_pa_fa_icons = json_decode(file_get_contents($mrh_pa_fa_json), true) ?: [];
     }
 }
-// Final fallback
 if (empty($mrh_pa_fa_icons)) {
-    $mrh_pa_fa_icons = ['fa-leaf','fa-star','fa-heart','fa-fire','fa-bolt','fa-trophy','fa-medkit','fa-shield','fa-diamond','fa-eye','fa-female','fa-mars','fa-home','fa-sun-o','fa-pagelines','fa-snowflake-o'];
+    $mrh_pa_fa_icons = ['fa-leaf','fa-star','fa-heart','fa-fire','fa-bolt','fa-trophy','fa-medkit','fa-shield','fa-diamond','fa-eye','fa-venus','fa-mars','fa-home','fa-sun-o','fa-pagelines','fa-snowflake-o'];
 }
 sort($mrh_pa_fa_icons);
 echo json_encode($mrh_pa_fa_icons);
 ?>;
 
+var mrhPaBadgeBase = '<?php echo $mrh_pa_badge_base; ?>';
+
 // ============================================================
-// PICTOS / ICON EDITOR v1.2.3
+// PICTOS / ICON EDITOR v1.3.0
 // ============================================================
 var mrhPaCurrentPictos = <?php echo json_encode($mrh_pa_pictos); ?> || [];
+
+// Determine if an icon is SVG type
+function mrhPaIsSvg(icon) {
+    return icon && icon.indexOf('svg:') === 0;
+}
+function mrhPaSvgUrl(icon) {
+    return '/' + icon.replace('svg:', '');
+}
 
 function mrhPaRenderIcons() {
     var list = document.getElementById('mrh-pa-icon-list');
@@ -725,20 +720,28 @@ function mrhPaRenderIcons() {
     
     for (var i = 0; i < mrhPaCurrentPictos.length; i++) {
         var p = mrhPaCurrentPictos[i];
-        var iconClass = (p.icon || '').replace(/^fa\s+/, '');
+        var iconVal = (p.icon || '').replace(/^fa\s+/, '');
+        var sizeNum = parseInt(p.size) || 16;
         var item = document.createElement('div');
         item.className = 'mrh-pa-icon-item';
         item.setAttribute('data-idx', i);
+        item.setAttribute('draggable', 'true');
+        
+        var previewHtml;
+        if (mrhPaIsSvg(iconVal)) {
+            previewHtml = '<img class="icon-preview-svg" src="' + mrhPaEsc(mrhPaSvgUrl(iconVal)) + '" style="width:' + sizeNum + 'px;height:' + sizeNum + 'px">';
+        } else {
+            previewHtml = '<span class="icon-preview fa ' + mrhPaEsc(iconVal) + '" style="color:' + mrhPaEsc(p.color || '#333') + ';font-size:' + sizeNum + 'px"></span>';
+        }
+        
+        var colorHtml = mrhPaIsSvg(iconVal) ? '' : '<input type="color" class="icon-edit-color" value="' + mrhPaEsc(p.color || '#333333') + '" onchange="mrhPaEditIconColor(' + i + ', this.value)" title="Farbe aendern">';
+        
         item.innerHTML = 
-            '<span class="icon-preview fa ' + mrhPaEsc(iconClass) + '" style="color:' + mrhPaEsc(p.color || '#333') + ';font-size:' + mrhPaEsc(p.size || '1em') + '"></span>' +
-            '<span class="icon-title" title="' + mrhPaEsc(p.title || iconClass) + '">' + mrhPaEsc(p.title || iconClass) + '</span>' +
-            '<input type="color" class="icon-edit-color" value="' + mrhPaEsc(p.color || '#333333') + '" onchange="mrhPaEditIconColor(' + i + ', this.value)" title="Farbe aendern">' +
-            '<select class="icon-edit-size" onchange="mrhPaEditIconSize(' + i + ', this.value)" title="Groesse aendern">' +
-                '<option value="1em"' + (p.size === '1em' || !p.size ? ' selected' : '') + '>1em</option>' +
-                '<option value="1.2em"' + (p.size === '1.2em' ? ' selected' : '') + '>1.2em</option>' +
-                '<option value="1.5em"' + (p.size === '1.5em' ? ' selected' : '') + '>1.5em</option>' +
-                '<option value="2em"' + (p.size === '2em' ? ' selected' : '') + '>2em</option>' +
-            '</select>' +
+            '<span class="drag-handle" title="Ziehen zum Sortieren">&#9776;</span>' +
+            previewHtml +
+            '<span class="icon-title" title="' + mrhPaEsc(p.title || iconVal) + '">' + mrhPaEsc(p.title || iconVal) + '</span>' +
+            colorHtml +
+            '<input type="number" class="icon-edit-size" value="' + sizeNum + '" min="10" max="48" onchange="mrhPaEditIconSize(' + i + ', this.value)" title="Groesse (px)"> px' +
             '<span class="icon-remove" onclick="mrhPaRemoveIcon(' + i + ')" title="Entfernen">&times;</span>';
         list.appendChild(item);
     }
@@ -747,17 +750,14 @@ function mrhPaRenderIcons() {
     var jsonField = document.getElementById('mrh-pa-pictos-json');
     if (jsonField) jsonField.value = JSON.stringify(mrhPaCurrentPictos);
     
-    // Update library selected states
     mrhPaUpdateLibrarySelection();
-    
-    // Update quick-pick selected states
     mrhPaUpdateQuickPick();
+    mrhPaInitDragDrop();
 }
 
 function mrhPaEditIconColor(idx, color) {
     if (mrhPaCurrentPictos[idx]) {
         mrhPaCurrentPictos[idx].color = color;
-        // Update preview immediately without full re-render
         var item = document.querySelector('.mrh-pa-icon-item[data-idx="' + idx + '"]');
         if (item) {
             var preview = item.querySelector('.icon-preview');
@@ -769,12 +769,13 @@ function mrhPaEditIconColor(idx, color) {
 
 function mrhPaEditIconSize(idx, size) {
     if (mrhPaCurrentPictos[idx]) {
-        mrhPaCurrentPictos[idx].size = size;
-        // Update preview immediately
+        mrhPaCurrentPictos[idx].size = size + 'px';
         var item = document.querySelector('.mrh-pa-icon-item[data-idx="' + idx + '"]');
         if (item) {
             var preview = item.querySelector('.icon-preview');
-            if (preview) preview.style.fontSize = size;
+            var svgPreview = item.querySelector('.icon-preview-svg');
+            if (preview) preview.style.fontSize = size + 'px';
+            if (svgPreview) { svgPreview.style.width = size + 'px'; svgPreview.style.height = size + 'px'; }
         }
         document.getElementById('mrh-pa-pictos-json').value = JSON.stringify(mrhPaCurrentPictos);
     }
@@ -785,8 +786,46 @@ function mrhPaRemoveIcon(idx) {
     mrhPaRenderIcons();
 }
 
+// ============================================================
+// DRAG & DROP for icon reordering
+// ============================================================
+var mrhPaDragIdx = null;
+
+function mrhPaInitDragDrop() {
+    var items = document.querySelectorAll('.mrh-pa-icon-item[draggable]');
+    items.forEach(function(item) {
+        item.addEventListener('dragstart', function(e) {
+            mrhPaDragIdx = parseInt(this.getAttribute('data-idx'));
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        });
+        item.addEventListener('dragend', function() {
+            this.classList.remove('dragging');
+            document.querySelectorAll('.mrh-pa-icon-item').forEach(function(el) { el.classList.remove('drag-over'); });
+        });
+        item.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            this.classList.add('drag-over');
+        });
+        item.addEventListener('dragleave', function() {
+            this.classList.remove('drag-over');
+        });
+        item.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+            var dropIdx = parseInt(this.getAttribute('data-idx'));
+            if (mrhPaDragIdx !== null && mrhPaDragIdx !== dropIdx) {
+                var moved = mrhPaCurrentPictos.splice(mrhPaDragIdx, 1)[0];
+                mrhPaCurrentPictos.splice(dropIdx, 0, moved);
+                mrhPaRenderIcons();
+            }
+            mrhPaDragIdx = null;
+        });
+    });
+}
+
 function mrhPaAddIconFromLibrary(iconClass) {
-    // Check if already added
     var existIdx = -1;
     for (var i = 0; i < mrhPaCurrentPictos.length; i++) {
         var existing = (mrhPaCurrentPictos[i].icon || '').replace(/^fa\s+/, '');
@@ -797,22 +836,19 @@ function mrhPaAddIconFromLibrary(iconClass) {
     }
     
     if (existIdx >= 0) {
-        // Remove if already exists (toggle)
         mrhPaCurrentPictos.splice(existIdx, 1);
     } else {
-        // Add new
         var title = document.getElementById('mrh-pa-add-title').value.trim() || iconClass.replace('fa-', '').replace(/-/g, ' ');
         var color = document.getElementById('mrh-pa-add-color').value || '#333333';
-        var size = document.getElementById('mrh-pa-add-size').value || '1em';
+        var sizeVal = parseInt(document.getElementById('mrh-pa-add-size').value) || 16;
         
         mrhPaCurrentPictos.push({
             icon: iconClass,
             color: color,
-            size: size,
+            size: sizeVal + 'px',
             title: title
         });
         
-        // Clear title for next
         document.getElementById('mrh-pa-add-title').value = '';
     }
     
@@ -842,18 +878,15 @@ function mrhPaBuildLibrary() {
 function mrhPaFilterLibrary(query) {
     var grid = document.getElementById('mrh-pa-icon-library-grid');
     if (!grid) return;
-    
     var buttons = grid.querySelectorAll('.mrh-pa-icon-lib-btn');
     var q = query.toLowerCase().trim();
     var visible = 0;
-    
     for (var i = 0; i < buttons.length; i++) {
         var name = buttons[i].getAttribute('data-name');
         var show = !q || name.indexOf(q) !== -1;
         buttons[i].style.display = show ? '' : 'none';
         if (show) visible++;
     }
-    
     var countEl = document.getElementById('mrh-pa-icon-lib-count');
     if (countEl) countEl.textContent = visible + ' Icons' + (q ? ' gefunden' : '');
 }
@@ -861,7 +894,6 @@ function mrhPaFilterLibrary(query) {
 function mrhPaUpdateLibrarySelection() {
     var grid = document.getElementById('mrh-pa-icon-library-grid');
     if (!grid) return;
-    
     var buttons = grid.querySelectorAll('.mrh-pa-icon-lib-btn');
     for (var i = 0; i < buttons.length; i++) {
         var icon = buttons[i].getAttribute('data-icon');
@@ -877,34 +909,31 @@ function mrhPaUpdateLibrarySelection() {
 // QUICK-PICK (predefined cannabis icons)
 // ============================================================
 function mrhPaQuickPick(el) {
-    var iconClass = el.getAttribute('data-icon');
-    var title = el.getAttribute('data-title') || iconClass.replace('fa-', '');
+    var iconVal = el.getAttribute('data-icon');
+    var title = el.getAttribute('data-title') || '';
     
-    // Read color/size from inline editors (if present), fallback to data-attributes
     var colorInput = el.querySelector('.qp-color');
-    var sizeSelect = el.querySelector('.qp-size');
+    var sizeInput = el.querySelector('.qp-size-input');
     var color = colorInput ? colorInput.value : (el.getAttribute('data-color') || '#333333');
-    var size = sizeSelect ? sizeSelect.value : '1em';
+    var sizeNum = sizeInput ? parseInt(sizeInput.value) || 16 : 16;
     
     // Check if already in current pictos
     var existIdx = -1;
     for (var i = 0; i < mrhPaCurrentPictos.length; i++) {
         var existing = (mrhPaCurrentPictos[i].icon || '').replace(/^fa\s+/, '');
-        if (existing === iconClass) {
+        if (existing === iconVal) {
             existIdx = i;
             break;
         }
     }
     
     if (existIdx >= 0) {
-        // Remove (toggle off)
         mrhPaCurrentPictos.splice(existIdx, 1);
     } else {
-        // Add with user-chosen color and size from inline editors
         mrhPaCurrentPictos.push({
-            icon: iconClass,
+            icon: iconVal,
             color: color,
-            size: size,
+            size: sizeNum + 'px',
             title: title
         });
     }
@@ -912,22 +941,19 @@ function mrhPaQuickPick(el) {
     mrhPaRenderIcons();
 }
 
-// Edit color of a QuickPick icon — updates the picto in real time if active
 function mrhPaQpEditColor(input) {
     var btn = input.closest('.mrh-pa-quickpick-btn');
     if (!btn) return;
-    var iconClass = btn.getAttribute('data-icon');
+    var iconVal = btn.getAttribute('data-icon');
     var newColor = input.value;
     
-    // Update the icon preview in the QuickPick button
     var iconEl = btn.querySelector('.fa');
     if (iconEl) iconEl.style.color = newColor;
     btn.setAttribute('data-color', newColor);
     
-    // If this icon is active, update the picto entry
     for (var i = 0; i < mrhPaCurrentPictos.length; i++) {
         var existing = (mrhPaCurrentPictos[i].icon || '').replace(/^fa\s+/, '');
-        if (existing === iconClass) {
+        if (existing === iconVal) {
             mrhPaCurrentPictos[i].color = newColor;
             mrhPaRenderIcons();
             return;
@@ -935,17 +961,15 @@ function mrhPaQpEditColor(input) {
     }
 }
 
-// Edit size of a QuickPick icon — updates the picto in real time if active
-function mrhPaQpEditSize(select) {
-    var btn = select.closest('.mrh-pa-quickpick-btn');
+function mrhPaQpEditSize(input) {
+    var btn = input.closest('.mrh-pa-quickpick-btn');
     if (!btn) return;
-    var iconClass = btn.getAttribute('data-icon');
-    var newSize = select.value;
+    var iconVal = btn.getAttribute('data-icon');
+    var newSize = (parseInt(input.value) || 16) + 'px';
     
-    // If this icon is active, update the picto entry
     for (var i = 0; i < mrhPaCurrentPictos.length; i++) {
         var existing = (mrhPaCurrentPictos[i].icon || '').replace(/^fa\s+/, '');
-        if (existing === iconClass) {
+        if (existing === iconVal) {
             mrhPaCurrentPictos[i].size = newSize;
             mrhPaRenderIcons();
             return;
@@ -965,13 +989,11 @@ function mrhPaUpdateQuickPick() {
         var isActive = !!matchedPicto;
         btns[i].classList.toggle('active', isActive);
         
-        // Sync inline editors with current picto values when active
         if (isActive && matchedPicto) {
             var colorInput = btns[i].querySelector('.qp-color');
-            var sizeSelect = btns[i].querySelector('.qp-size');
+            var sizeInput = btns[i].querySelector('.qp-size-input');
             if (colorInput) colorInput.value = matchedPicto.color || '#333333';
-            if (sizeSelect) sizeSelect.value = matchedPicto.size || '1em';
-            // Also update the icon preview color
+            if (sizeInput) sizeInput.value = parseInt(matchedPicto.size) || 16;
             var iconEl = btns[i].querySelector('.fa');
             if (iconEl) iconEl.style.color = matchedPicto.color || '#333333';
         }
@@ -979,17 +1001,28 @@ function mrhPaUpdateQuickPick() {
 }
 
 // ============================================================
-// CANNABIS CUP PREVIEW
+// CANNABIS CUP PREVIEW (max 3 trophies + number)
 // ============================================================
 function mrhPaUpdateCupsPreview() {
     var count = parseInt(document.getElementById('mrh-pa-cups-input').value) || 0;
     var preview = document.getElementById('mrh-pa-cups-preview');
     if (!preview) return;
     preview.innerHTML = '';
-    for (var i = 0; i < Math.min(count, 20); i++) {
+    
+    if (count <= 0) return;
+    
+    var trophyCount = Math.min(count, 3);
+    for (var i = 0; i < trophyCount; i++) {
         var span = document.createElement('span');
         span.className = 'fa fa-trophy';
         preview.appendChild(span);
+    }
+    
+    if (count > 3) {
+        var numSpan = document.createElement('span');
+        numSpan.className = 'cup-number';
+        numSpan.textContent = count;
+        preview.appendChild(numSpan);
     }
 }
 
@@ -1089,31 +1122,21 @@ function mrhPaAiFill(productsId) {
     xhr.send('csrf_token=' + encodeURIComponent(document.querySelector('input[name="csrf_token"]')?.value || ''));
 }
 
-// Fill form fields from AI response
 function mrhPaFillFields(attrs) {
     for (var langId in attrs) {
         var langAttrs = attrs[langId];
         
-        // Handle is_seed
         if (langAttrs.is_seed !== undefined) {
             var seedEl = document.getElementById('mrh_pa_is_seed');
-            if (seedEl) {
-                seedEl.value = langAttrs.is_seed ? '1' : '0';
-                mrhPaHighlight(seedEl);
-            }
+            if (seedEl) { seedEl.value = langAttrs.is_seed ? '1' : '0'; mrhPaHighlight(seedEl); }
         }
         
-        // Handle standard fields
         for (var field in langAttrs) {
             if (field === 'custom_fields' || field === 'is_seed' || field === 'ai_confidence' || field === 'pictos' || field === 'cannabis_cups') continue;
             var el = document.getElementById('mrh_pa_' + langId + '_' + field);
-            if (el) {
-                el.value = langAttrs[field];
-                mrhPaHighlight(el);
-            }
+            if (el) { el.value = langAttrs[field]; mrhPaHighlight(el); }
         }
         
-        // Handle custom_fields
         if (langAttrs.custom_fields && Array.isArray(langAttrs.custom_fields)) {
             var container = document.getElementById('mrh-pa-custom-' + langId);
             if (container) {
@@ -1134,19 +1157,14 @@ function mrhPaFillFields(attrs) {
             }
         }
     }
-    
-    // Auto-detect preset after AI fill
     mrhPaAutoDetectPreset();
 }
 
-// Auto-detect and activate the correct preset based on current field values
 function mrhPaAutoDetectPreset() {
     var firstPanel = document.querySelector('.mrh-pa-lang-panel');
     if (!firstPanel) return;
-    
     var genderSel = firstPanel.querySelector('select[data-field="gender"]');
     var flowerSel = firstPanel.querySelector('select[data-field="flowering_type"]');
-    
     var gender = genderSel ? genderSel.value : '';
     var flower = flowerSel ? flowerSel.value : '';
     
@@ -1165,13 +1183,11 @@ function mrhPaAutoDetectPreset() {
     }
 }
 
-// Highlight helper
 function mrhPaHighlight(el) {
     el.style.backgroundColor = '#ffffcc';
     setTimeout(function() { el.style.backgroundColor = ''; }, 5000);
 }
 
-// Escape HTML for safe insertion
 function mrhPaEsc(str) {
     var div = document.createElement('div');
     div.appendChild(document.createTextNode(str));
@@ -1185,5 +1201,6 @@ document.addEventListener('DOMContentLoaded', function() {
     mrhPaRenderIcons();
     mrhPaBuildLibrary();
     mrhPaAutoDetectPreset();
+    mrhPaUpdateCupsPreview();
 });
 </script>
