@@ -631,14 +631,27 @@ class MrhProductAttributes {
                 // Check if SVG icon (starts with svg: or contains .svg)
                 $is_svg = (strpos($icon_val, 'svg:') === 0 || strpos($icon_val, '.svg') !== false);
                 
+                // Read bgcolor and bordercolor
+                $bgcolor = $picto['bgcolor'] ?? '';
+                $bordercolor = $picto['bordercolor'] ?? '';
+                $badge_style = '';
+                if ($bgcolor && $bgcolor !== '#ffffff') {
+                    $badge_style .= 'background:' . htmlspecialchars($bgcolor) . ';';
+                }
+                if ($bordercolor && $bordercolor !== '#dddddd') {
+                    $badge_style .= 'border-color:' . htmlspecialchars($bordercolor) . ';';
+                }
+                
                 if ($is_svg) {
                     // SVG badge
                     $svg_path = str_replace('svg:', '', $icon_val);
                     $svg_url = '/' . ltrim($svg_path, '/');
                     $size_px = intval($size) ?: 16;
-                    $badges[] = '<span class="mrh-type-badge mrh-badge-picto" title="' . htmlspecialchars($title) . '">' .
+                    $badges[] = '<span class="mrh-type-badge mrh-badge-picto" title="' . htmlspecialchars($title) . '"' .
+                        ($badge_style ? ' style="' . $badge_style . '"' : '') . '>' .
                         '<img src="' . htmlspecialchars($svg_url) . '" alt="' . htmlspecialchars($title) . '" ' .
                         'style="width:' . $size_px . 'px;height:' . $size_px . 'px;vertical-align:middle" class="mrh-badge-svg">' .
+                        ($title ? '<span class="mrh-badge-text">' . htmlspecialchars($title) . '</span>' : '') .
                         '</span>';
                 } else {
                     // FontAwesome badge (FA7 format: fa-solid/fa-regular/fa-brands)
@@ -668,8 +681,9 @@ class MrhProductAttributes {
                         $style .= 'font-size:' . $size_px . 'px;';
                     }
                     
+                    $combined_style = $style . $badge_style;
                     $badges[] = '<span class="mrh-type-badge mrh-badge-picto" title="' . htmlspecialchars($title) . '"' .
-                        ($style ? ' style="' . $style . '"' : '') . '>' .
+                        ($combined_style ? ' style="' . $combined_style . '"' : '') . '>' .
                         '<span class="' . $fa_prefix . ' fa-fw ' . htmlspecialchars($icon_class) . '"></span>' .
                         ($title ? '<span class="mrh-badge-text">' . htmlspecialchars($title) . '</span>' : '') .
                         '</span>';

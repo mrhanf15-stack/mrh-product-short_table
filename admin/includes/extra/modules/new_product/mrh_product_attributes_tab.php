@@ -792,13 +792,13 @@ var mrhPaBadgeCssMap = {
 
 function mrhPaUpdateAutoBadges() {
     var bar = document.getElementById('mrh-pa-auto-badges-bar');
-    var empty = document.getElementById('mrh-pa-auto-badges-empty');
     if (!bar) return;
     
-    var firstPanel = document.querySelector('.mrh-pa-lang-panel');
-    if (!firstPanel) return;
-    var genderSel = firstPanel.querySelector('select[data-field="gender"]');
-    var flowerSel = firstPanel.querySelector('select[data-field="flowering_type"]');
+    // Try active panel first, then any panel
+    var panel = document.querySelector('.mrh-pa-lang-panel.active') || document.querySelector('.mrh-pa-lang-panel');
+    if (!panel) return;
+    var genderSel = panel.querySelector('select[data-field="gender"]');
+    var flowerSel = panel.querySelector('select[data-field="flowering_type"]');
     var gender = genderSel ? genderSel.value : '';
     var flower = flowerSel ? flowerSel.value : '';
     
@@ -848,9 +848,13 @@ function mrhPaUpdateAutoBadges() {
                 ic.style.fontSize = '14px';
                 span.appendChild(ic);
             }
-        }
-        
-        if (isTextOnly || showText) {
+            // Always show label for preview (even if show_text is off, show it dimmed)
+            var txt = document.createElement('span');
+            txt.textContent = label;
+            txt.style.cssText = 'font-size:11px; font-weight:600;' + (showText ? '' : ' opacity:0.5; font-style:italic;');
+            txt.title = showText ? 'Text wird im Frontend angezeigt' : 'Text im Frontend ausgeblendet (nur Icon)';
+            span.appendChild(txt);
+        } else if (isTextOnly) {
             var txt = document.createElement('span');
             txt.className = 'mrh-badge-label';
             txt.textContent = label;
@@ -916,13 +920,17 @@ function mrhPaRenderIcons() {
             previewHtml = '<span class="icon-preview ' + faPrefix + ' ' + mrhPaEsc(iconVal) + '" style="color:' + mrhPaEsc(p.color || '#333') + ';font-size:' + sizeNum + 'px"></span>';
         }
         
-        var colorHtml = mrhPaIsSvg(iconVal) ? '' : '<input type="color" class="icon-edit-color" value="' + mrhPaEsc(p.color || '#333333') + '" onchange="mrhPaEditIconColor(' + i + ', this.value)" title="Farbe aendern">';
+        var colorHtml = mrhPaIsSvg(iconVal) ? '' : '<input type="color" class="icon-edit-color" value="' + mrhPaEsc(p.color || '#333333') + '" onchange="mrhPaEditIconColor(' + i + ', this.value)" title="Icon-Farbe">';
+        var bgColor = p.bgcolor || '#ffffff';
+        var borderColor = p.bordercolor || '#dddddd';
         
         item.innerHTML = 
             '<span class="drag-handle" title="Ziehen zum Sortieren">&#9776;</span>' +
-            previewHtml +
-            '<span class="icon-title" title="' + mrhPaEsc(p.title || iconVal) + '">' + mrhPaEsc(p.title || iconVal) + '</span>' +
+            '<span class="icon-badge-preview" style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;background:' + mrhPaEsc(bgColor) + ';border:1.5px solid ' + mrhPaEsc(borderColor) + ';">' + previewHtml + '</span>' +
+            '<input type="text" class="icon-edit-title" value="' + mrhPaEsc(p.title || '') + '" placeholder="Text (leer=nur Icon)" onchange="mrhPaEditIconTitle(' + i + ', this.value)" title="Anzeige-Text" style="width:100px;font-size:11px;padding:2px 4px;border:1px solid #ccc;border-radius:3px;">' +
             colorHtml +
+            '<input type="color" class="icon-edit-bgcolor" value="' + mrhPaEsc(bgColor) + '" onchange="mrhPaEditIconBg(' + i + ', this.value)" title="Hintergrund">' +
+            '<input type="color" class="icon-edit-border" value="' + mrhPaEsc(borderColor) + '" onchange="mrhPaEditIconBorder(' + i + ', this.value)" title="Rand-Farbe">' +
             '<input type="number" class="icon-edit-size" value="' + sizeNum + '" min="10" max="48" onchange="mrhPaEditIconSize(' + i + ', this.value)" title="Groesse (px)"> px' +
             '<span class="icon-remove" onclick="mrhPaRemoveIcon(' + i + ')" title="Entfernen">&times;</span>';
         list.appendChild(item);
@@ -958,6 +966,37 @@ function mrhPaEditIconSize(idx, size) {
             var svgPreview = item.querySelector('.icon-preview-svg');
             if (preview) preview.style.fontSize = size + 'px';
             if (svgPreview) { svgPreview.style.width = size + 'px'; svgPreview.style.height = size + 'px'; }
+        }
+        document.getElementById('mrh-pa-pictos-json').value = JSON.stringify(mrhPaCurrentPictos);
+    }
+}
+
+function mrhPaEditIconTitle(idx, title) {
+    if (mrhPaCurrentPictos[idx]) {
+        mrhPaCurrentPictos[idx].title = title;
+        document.getElementById('mrh-pa-pictos-json').value = JSON.stringify(mrhPaCurrentPictos);
+    }
+}
+
+function mrhPaEditIconBg(idx, bgcolor) {
+    if (mrhPaCurrentPictos[idx]) {
+        mrhPaCurrentPictos[idx].bgcolor = bgcolor;
+        var item = document.querySelector('.mrh-pa-icon-item[data-idx="' + idx + '"]');
+        if (item) {
+            var preview = item.querySelector('.icon-badge-preview');
+            if (preview) preview.style.background = bgcolor;
+        }
+        document.getElementById('mrh-pa-pictos-json').value = JSON.stringify(mrhPaCurrentPictos);
+    }
+}
+
+function mrhPaEditIconBorder(idx, bordercolor) {
+    if (mrhPaCurrentPictos[idx]) {
+        mrhPaCurrentPictos[idx].bordercolor = bordercolor;
+        var item = document.querySelector('.mrh-pa-icon-item[data-idx="' + idx + '"]');
+        if (item) {
+            var preview = item.querySelector('.icon-badge-preview');
+            if (preview) preview.style.borderColor = bordercolor;
         }
         document.getElementById('mrh-pa-pictos-json').value = JSON.stringify(mrhPaCurrentPictos);
     }
