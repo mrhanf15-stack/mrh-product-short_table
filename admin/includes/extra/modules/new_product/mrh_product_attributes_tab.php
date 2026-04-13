@@ -1400,22 +1400,53 @@ function mrhPaGetFieldOrder() {
 }
 
 // ============================================================
-// HIDE OLD SHORT DESCRIPTION TEXTAREA
+// HIDE OLD SHORT DESCRIPTION TEXTAREA + CKEDITOR
 // ============================================================
 function mrhPaHideOldShortDesc() {
-    // The old products_short_description textareas contain HTML tables
-    // with the same data. Hide them to avoid confusion.
-    var textareas = document.querySelectorAll('textarea[name^="products_short_description["]');
-    textareas.forEach(function(ta) {
-        // Find the parent container div
-        var container = ta.closest('div.main') || ta.parentElement;
+    // Target: textarea#products_short_description_X and CKEditor wrapper div#cke_products_short_description_X
+    // These contain the old HTML table data and must be hidden.
+    
+    // 1. Hide all textareas with id starting with products_short_description
+    document.querySelectorAll('textarea[id^="products_short_description"]').forEach(function(ta) {
+        ta.style.display = 'none';
+        // Hide the CKEditor wrapper div (sibling or nearby)
+        var ckeId = 'cke_' + ta.id;
+        var ckeDiv = document.getElementById(ckeId);
+        if (ckeDiv) {
+            ckeDiv.style.display = 'none';
+        }
+        // Hide the parent container div.main that holds the label + editor
+        var container = ta.closest('div.main') || ta.closest('div[style*="vertical-align"]');
         if (container) {
-            // Check if there's a label before it
-            var prev = container.previousElementSibling;
             container.style.display = 'none';
-            // Also hide the label div if it says "Kurzbeschreibung"
-            if (prev && prev.textContent && prev.textContent.indexOf('Kurzbeschreibung') !== -1) {
-                prev.style.display = 'none';
+        }
+    });
+    
+    // 2. Also hide by name attribute (fallback)
+    document.querySelectorAll('textarea[name^="products_short_description["]').forEach(function(ta) {
+        var container = ta.closest('div.main') || ta.closest('div[style*="vertical-align"]');
+        if (container) {
+            container.style.display = 'none';
+        }
+    });
+    
+    // 3. Hide any remaining CKEditor wrappers for short_description
+    document.querySelectorAll('div[id^="cke_products_short_description"]').forEach(function(div) {
+        var container = div.closest('div.main') || div.closest('div[style*="vertical-align"]');
+        if (container) {
+            container.style.display = 'none';
+        } else {
+            div.style.display = 'none';
+        }
+    });
+    
+    // 4. Find and hide label divs that say "Kurzbeschreibung" or "Short Description"
+    document.querySelectorAll('div.main b, div.main strong').forEach(function(b) {
+        var text = b.textContent || '';
+        if (text.indexOf('Kurzbeschreibung') !== -1 || text.indexOf('Short Description') !== -1) {
+            var container = b.closest('div.main') || b.closest('div[style*="vertical-align"]');
+            if (container) {
+                container.style.display = 'none';
             }
         }
     });
@@ -1430,9 +1461,10 @@ document.addEventListener('DOMContentLoaded', function() {
     mrhPaAutoDetectPreset();
     mrhPaUpdateCupsPreview();
     mrhPaInitFieldDragDrop();
-    // Hide old short_description textareas if MRH data exists
+    // Hide old short_description - delay to let CKEditor init first
     if (mrhPaProductsId > 0) {
-        mrhPaHideOldShortDesc();
+        setTimeout(mrhPaHideOldShortDesc, 500);
+        setTimeout(mrhPaHideOldShortDesc, 2000); // retry after CKEditor fully loaded
     }
 });
 </script>
