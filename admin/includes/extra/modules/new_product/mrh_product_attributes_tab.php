@@ -4,18 +4,18 @@
  * Autoinclude: ~/admin/includes/extra/modules/new_product/
  * 
  * Injects the "Eigenschaften (MRH)" tab into the product edit form.
- * This hook runs inside the product edit form in categories.php.
  *
- * Features:
+ * Features v1.2.0:
  * - 4 Preset buttons (Feminisiert | Autoflowering | Regulaer | Auto Regulaer)
  * - Language tabs with all standard fields
- * - FontAwesome Icon Editor (picker, color, size)
+ * - FontAwesome Icon Editor with SEARCHABLE LIBRARY (730 icons)
+ * - Inline editing of existing icons (color + size)
  * - Cannabis Cup trophy count
  * - AI fill button (single product)
  * - Auto-preset detection from loaded data
  *
  * @package MRH_Product_Attributes
- * @version 1.1.0
+ * @version 1.2.0
  */
 
 defined('_VALID_XTC') or die('Direct Access to this location is not allowed.');
@@ -122,29 +122,12 @@ if (!empty($mrh_pa_first_attr)) {
     elseif ($g === 'regular') $mrh_pa_detected_preset = 'regular';
     elseif ($g === 'feminized') $mrh_pa_detected_preset = 'feminized';
 }
-
-// Common FA icons for cannabis products (for the quick-pick grid)
-$mrh_pa_common_icons = [
-    ['icon' => 'fa-medkit', 'title' => 'Medical', 'color' => '#ff6666'],
-    ['icon' => 'fa-tachometer', 'title' => 'Autoflowering', 'color' => '#54B80D'],
-    ['icon' => 'fa-leaf', 'title' => 'CBD-reich', 'color' => '#00b894'],
-    ['icon' => 'fa-fire', 'title' => 'Hoher THC', 'color' => '#d63031'],
-    ['icon' => 'fa-star', 'title' => 'Bestseller', 'color' => '#f39c12'],
-    ['icon' => 'fa-diamond', 'title' => 'Premium', 'color' => '#00cec9'],
-    ['icon' => 'fa-bolt', 'title' => 'Schnelle Bluete', 'color' => '#e17055'],
-    ['icon' => 'fa-shield', 'title' => 'Resistent', 'color' => '#636e72'],
-    ['icon' => 'fa-sun-o', 'title' => 'Outdoor', 'color' => '#fdcb6e'],
-    ['icon' => 'fa-home', 'title' => 'Indoor', 'color' => '#6c5ce7'],
-    ['icon' => 'fa-female', 'title' => 'Feminisiert', 'color' => '#e84393'],
-    ['icon' => 'fa-pagelines', 'title' => 'Organic', 'color' => '#27ae60'],
-    ['icon' => 'fa-snowflake-o', 'title' => 'Kaltresistent', 'color' => '#74b9ff'],
-    ['icon' => 'fa-thermometer-full', 'title' => 'Hitzeresistent', 'color' => '#e74c3c'],
-    ['icon' => 'fa-eye', 'title' => 'Besonders', 'color' => '#9b59b6'],
-    ['icon' => 'fa-heart', 'title' => 'Beliebt', 'color' => '#e74c3c'],
-];
 ?>
 
-<!-- MRH Product Attributes Tab v1.1.0 -->
+<!-- FontAwesome 4.7 CDN (required for icon previews) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha256-eZrrJcwDc/3uDhsdt61sL2oOBY362qM3lon1gyExkL0=" crossorigin="anonymous" />
+
+<!-- MRH Product Attributes Tab v1.2.0 -->
 <style>
 #mrh-pa-container { margin: 10px 0; padding: 0; }
 #mrh-pa-container .mrh-pa-header { 
@@ -222,66 +205,98 @@ $mrh_pa_common_icons = [
 #mrh-pa-container .mrh-pa-status .badge-warning { background: #fff3cd; color: #856404; }
 #mrh-pa-container .mrh-pa-status .badge-info { background: #d1ecf1; color: #0c5460; }
 
-/* === Icon Editor Styles === */
+/* ================================================================ */
+/* ICON EDITOR v1.2.0 - Searchable Library + Inline Editing         */
+/* ================================================================ */
 #mrh-pa-container .mrh-pa-icon-section {
-    margin-top: 15px; padding: 15px; background: #fff; border: 1px solid #ddd; border-radius: 6px;
+    margin-top: 20px; padding: 15px; background: #fff; border: 2px solid #2c3e50; border-radius: 6px;
 }
 #mrh-pa-container .mrh-pa-icon-section h4 {
-    margin: 0 0 12px 0; font-size: 14px; color: #2c3e50;
+    margin: 0 0 12px 0; font-size: 15px; color: #2c3e50; font-weight: 700;
+    border-bottom: 2px solid #27ae60; padding-bottom: 8px;
 }
+
+/* Current icons list (editable) */
 #mrh-pa-container .mrh-pa-icon-list {
-    display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; min-height: 40px;
-    padding: 8px; background: #f8f9fa; border-radius: 4px; border: 1px dashed #dee2e6;
+    display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; min-height: 44px;
+    padding: 10px; background: #f8f9fa; border-radius: 6px; border: 2px dashed #dee2e6;
 }
 #mrh-pa-container .mrh-pa-icon-item {
-    display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px;
+    display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px;
     background: #fff; border: 1px solid #ddd; border-radius: 20px; font-size: 12px;
-    cursor: default; transition: all 0.2s;
+    cursor: default; transition: all 0.2s; position: relative;
 }
-#mrh-pa-container .mrh-pa-icon-item:hover { border-color: #27ae60; }
-#mrh-pa-container .mrh-pa-icon-item .icon-preview { font-size: 16px; }
-#mrh-pa-container .mrh-pa-icon-item .icon-title { font-weight: 500; }
+#mrh-pa-container .mrh-pa-icon-item:hover { border-color: #27ae60; box-shadow: 0 2px 8px rgba(39,174,96,0.15); }
+#mrh-pa-container .mrh-pa-icon-item .icon-preview { font-size: 18px; min-width: 20px; text-align: center; }
+#mrh-pa-container .mrh-pa-icon-item .icon-title { font-weight: 500; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#mrh-pa-container .mrh-pa-icon-item .icon-edit-color {
+    width: 24px; height: 24px; padding: 0; border: 1px solid #ccc; border-radius: 50%; 
+    cursor: pointer; vertical-align: middle;
+}
+#mrh-pa-container .mrh-pa-icon-item .icon-edit-size {
+    padding: 2px 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 10px; 
+    background: #fff; cursor: pointer; width: 55px;
+}
 #mrh-pa-container .mrh-pa-icon-item .icon-remove {
-    cursor: pointer; color: #e74c3c; font-weight: 700; margin-left: 4px;
-    width: 16px; height: 16px; text-align: center; line-height: 16px;
-    border-radius: 50%; font-size: 14px;
+    cursor: pointer; color: #e74c3c; font-weight: 700; margin-left: 2px;
+    width: 18px; height: 18px; text-align: center; line-height: 18px;
+    border-radius: 50%; font-size: 14px; transition: all 0.15s;
 }
 #mrh-pa-container .mrh-pa-icon-item .icon-remove:hover { background: #fde8e8; }
 
-/* Quick-pick grid */
-#mrh-pa-container .mrh-pa-icon-quickpick {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px;
-    margin-bottom: 12px;
+/* Icon Library (searchable) */
+#mrh-pa-container .mrh-pa-icon-library {
+    margin-top: 12px; border: 1px solid #ddd; border-radius: 6px; overflow: hidden;
 }
-#mrh-pa-container .mrh-pa-icon-quickpick-btn {
-    display: flex; align-items: center; gap: 6px; padding: 6px 8px;
-    background: #fff; border: 1px solid #e0e0e0; border-radius: 4px;
-    cursor: pointer; font-size: 11px; transition: all 0.15s;
+#mrh-pa-container .mrh-pa-icon-library-header {
+    background: #2c3e50; color: #fff; padding: 10px 14px; display: flex; align-items: center; gap: 10px;
 }
-#mrh-pa-container .mrh-pa-icon-quickpick-btn:hover { border-color: #27ae60; background: #f0fdf4; }
-#mrh-pa-container .mrh-pa-icon-quickpick-btn.selected { border-color: #27ae60; background: #d4edda; }
-#mrh-pa-container .mrh-pa-icon-quickpick-btn .fa { font-size: 14px; }
+#mrh-pa-container .mrh-pa-icon-library-header .lib-title {
+    font-weight: 600; font-size: 13px; white-space: nowrap;
+}
+#mrh-pa-container .mrh-pa-icon-library-header input {
+    flex: 1; padding: 6px 10px; border: none; border-radius: 4px; font-size: 13px;
+    background: rgba(255,255,255,0.9);
+}
+#mrh-pa-container .mrh-pa-icon-library-header .lib-count {
+    font-size: 11px; opacity: 0.8; white-space: nowrap;
+}
+#mrh-pa-container .mrh-pa-icon-library-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 4px;
+    padding: 10px; max-height: 320px; overflow-y: auto; background: #fafafa;
+}
+#mrh-pa-container .mrh-pa-icon-lib-btn {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 8px 4px; background: #fff; border: 1px solid #e8e8e8; border-radius: 4px;
+    cursor: pointer; transition: all 0.15s; min-height: 60px;
+}
+#mrh-pa-container .mrh-pa-icon-lib-btn:hover { border-color: #27ae60; background: #f0fdf4; transform: scale(1.05); }
+#mrh-pa-container .mrh-pa-icon-lib-btn.selected { border-color: #27ae60; background: #d4edda; box-shadow: 0 0 0 2px #27ae60; }
+#mrh-pa-container .mrh-pa-icon-lib-btn .fa { font-size: 22px; color: #333; margin-bottom: 4px; }
+#mrh-pa-container .mrh-pa-icon-lib-btn .icon-name { font-size: 8px; color: #888; text-align: center; word-break: break-all; line-height: 1.2; }
 
-/* Custom icon add row */
-#mrh-pa-container .mrh-pa-icon-add-row {
-    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+/* Add icon controls */
+#mrh-pa-container .mrh-pa-icon-add-controls {
+    display: flex; gap: 8px; align-items: center; margin-top: 10px; padding: 10px;
+    background: #f0fdf4; border: 1px solid #d4edda; border-radius: 6px; flex-wrap: wrap;
 }
-#mrh-pa-container .mrh-pa-icon-add-row input[type="text"] {
-    width: 140px; padding: 5px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px;
+#mrh-pa-container .mrh-pa-icon-add-controls label { font-size: 12px; font-weight: 600; color: #555; }
+#mrh-pa-container .mrh-pa-icon-add-controls input[type="text"] {
+    padding: 5px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; width: 130px;
 }
-#mrh-pa-container .mrh-pa-icon-add-row input[type="color"] {
-    width: 36px; height: 30px; padding: 0; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;
+#mrh-pa-container .mrh-pa-icon-add-controls input[type="color"] {
+    width: 32px; height: 28px; padding: 0; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;
 }
-#mrh-pa-container .mrh-pa-icon-add-row select {
-    padding: 5px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; background: #fff;
+#mrh-pa-container .mrh-pa-icon-add-controls select {
+    padding: 5px 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; background: #fff;
 }
 
 /* Cannabis Cup section */
 #mrh-pa-container .mrh-pa-cups-section {
-    margin-top: 15px; padding: 15px; background: #fffbf0; border: 1px solid #f0c040; border-radius: 6px;
+    margin-top: 15px; padding: 15px; background: #fffbf0; border: 2px solid #f0c040; border-radius: 6px;
 }
 #mrh-pa-container .mrh-pa-cups-section h4 {
-    margin: 0 0 10px 0; font-size: 14px; color: #8a6d3b;
+    margin: 0 0 10px 0; font-size: 14px; color: #8a6d3b; font-weight: 700;
 }
 #mrh-pa-container .mrh-pa-cups-row {
     display: flex; align-items: center; gap: 12px;
@@ -441,48 +456,41 @@ $mrh_pa_common_icons = [
         <?php endforeach; ?>
         
         <!-- ============================================================ -->
-        <!-- ICON EDITOR (Pictos) - Global (not per language) -->
+        <!-- ICON EDITOR v1.2.0 with Searchable Library                   -->
         <!-- ============================================================ -->
         <div class="mrh-pa-icon-section">
-            <h4><span class="fa fa-picture-o"></span> Picto-Icons (Badges)</h4>
+            <h4><span class="fa fa-paint-brush"></span> Picto-Icons (Badges) — Editor</h4>
             
-            <!-- Current icons list -->
+            <!-- Current icons list (editable inline) -->
+            <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:6px;">Aktuelle Icons (klicke Farbe/Groesse zum Bearbeiten):</div>
             <div class="mrh-pa-icon-list" id="mrh-pa-icon-list">
-                <?php if (empty($mrh_pa_pictos)): ?>
-                    <span style="color:#999;font-size:12px;" id="mrh-pa-icon-empty">Keine Icons. Waehlen Sie unten aus oder fuegen Sie eigene hinzu.</span>
-                <?php endif; ?>
+                <span style="color:#999;font-size:12px;" id="mrh-pa-icon-empty">Keine Icons. Waehlen Sie aus der Bibliothek unten.</span>
             </div>
             
-            <!-- Quick-pick grid -->
-            <div style="margin-bottom:8px;font-size:12px;font-weight:600;color:#555;">Schnellauswahl:</div>
-            <div class="mrh-pa-icon-quickpick" id="mrh-pa-icon-quickpick">
-                <?php foreach ($mrh_pa_common_icons as $ci): ?>
-                    <div class="mrh-pa-icon-quickpick-btn" 
-                         data-icon="<?php echo $ci['icon']; ?>"
-                         data-title="<?php echo htmlspecialchars($ci['title']); ?>"
-                         data-color="<?php echo $ci['color']; ?>"
-                         onclick="mrhPaToggleQuickIcon(this)">
-                        <span class="fa <?php echo $ci['icon']; ?>" style="color:<?php echo $ci['color']; ?>"></span>
-                        <?php echo htmlspecialchars($ci['title']); ?>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-            
-            <!-- Custom icon add -->
-            <div style="margin-top:10px;font-size:12px;font-weight:600;color:#555;margin-bottom:6px;">Eigenes Icon hinzufuegen:</div>
-            <div class="mrh-pa-icon-add-row">
-                <input type="text" id="mrh-pa-icon-custom-class" placeholder="fa-icon-name" title="FontAwesome Klasse (z.B. fa-star)">
-                <input type="text" id="mrh-pa-icon-custom-title" placeholder="Titel" title="Anzeigename">
-                <input type="color" id="mrh-pa-icon-custom-color" value="#333333" title="Farbe">
-                <select id="mrh-pa-icon-custom-size" title="Groesse">
-                    <option value="1em">Normal</option>
-                    <option value="1.2em">Mittel</option>
-                    <option value="1.5em">Gross</option>
-                    <option value="2em">Sehr gross</option>
-                </select>
-                <button type="button" class="mrh-pa-btn mrh-pa-btn-primary" onclick="mrhPaAddCustomIcon()" style="padding:5px 12px;font-size:12px;">
-                    <span class="fa fa-plus"></span> Hinzufuegen
-                </button>
+            <!-- Icon Library with Search -->
+            <div class="mrh-pa-icon-library">
+                <div class="mrh-pa-icon-library-header">
+                    <span class="lib-title"><span class="fa fa-search"></span> Icon-Bibliothek</span>
+                    <input type="text" id="mrh-pa-icon-search" placeholder="Icon suchen... (z.B. leaf, star, heart, trophy)" oninput="mrhPaFilterLibrary(this.value)">
+                    <span class="lib-count" id="mrh-pa-icon-lib-count">730 Icons</span>
+                </div>
+                <div class="mrh-pa-icon-add-controls" id="mrh-pa-icon-add-controls">
+                    <label>Titel:</label>
+                    <input type="text" id="mrh-pa-add-title" placeholder="Anzeigename">
+                    <label>Farbe:</label>
+                    <input type="color" id="mrh-pa-add-color" value="#333333">
+                    <label>Groesse:</label>
+                    <select id="mrh-pa-add-size">
+                        <option value="1em">Normal (1em)</option>
+                        <option value="1.2em">Mittel (1.2em)</option>
+                        <option value="1.5em">Gross (1.5em)</option>
+                        <option value="2em">Sehr gross (2em)</option>
+                    </select>
+                    <span style="font-size:11px;color:#666;">Klicke ein Icon unten zum Hinzufuegen</span>
+                </div>
+                <div class="mrh-pa-icon-library-grid" id="mrh-pa-icon-library-grid">
+                    <!-- Icons werden per JS geladen -->
+                </div>
             </div>
             
             <!-- Hidden input to store pictos JSON -->
@@ -490,7 +498,7 @@ $mrh_pa_common_icons = [
         </div>
         
         <!-- ============================================================ -->
-        <!-- CANNABIS CUP TROPHIES -->
+        <!-- CANNABIS CUP TROPHIES                                        -->
         <!-- ============================================================ -->
         <div class="mrh-pa-cups-section">
             <h4><span class="fa fa-trophy" style="color:#f39c12"></span> Cannabis Cup Auszeichnungen</h4>
@@ -524,83 +532,76 @@ $mrh_pa_common_icons = [
 
 <script>
 // ============================================================
-// PICTOS / ICON EDITOR
+// FONTAWESOME 4.7 COMPLETE ICON LIST (730 icons)
+// ============================================================
+var mrhPaAllIcons = <?php echo file_get_contents(DIR_FS_CATALOG . 'includes/external/mrh_product_attributes/fa47_icons.json') ?: '["fa-leaf","fa-star","fa-heart","fa-fire","fa-bolt","fa-trophy","fa-medkit","fa-shield","fa-diamond","fa-eye"]'; ?>;
+
+// ============================================================
+// PICTOS / ICON EDITOR v1.2.0
 // ============================================================
 var mrhPaCurrentPictos = <?php echo json_encode($mrh_pa_pictos); ?> || [];
 
 function mrhPaRenderIcons() {
     var list = document.getElementById('mrh-pa-icon-list');
-    var emptyMsg = document.getElementById('mrh-pa-icon-empty');
+    if (!list) return;
     list.innerHTML = '';
     
     if (mrhPaCurrentPictos.length === 0) {
-        list.innerHTML = '<span style="color:#999;font-size:12px;" id="mrh-pa-icon-empty">Keine Icons. Waehlen Sie unten aus oder fuegen Sie eigene hinzu.</span>';
+        list.innerHTML = '<span style="color:#999;font-size:12px;" id="mrh-pa-icon-empty">Keine Icons. Waehlen Sie aus der Bibliothek unten.</span>';
     }
     
     for (var i = 0; i < mrhPaCurrentPictos.length; i++) {
         var p = mrhPaCurrentPictos[i];
+        var iconClass = (p.icon || '').replace(/^fa\s+/, '');
         var item = document.createElement('div');
         item.className = 'mrh-pa-icon-item';
-        item.innerHTML = '<span class="icon-preview fa ' + mrhPaEsc(p.icon.replace('fa ', '')) + '" style="color:' + mrhPaEsc(p.color || '#333') + ';font-size:' + mrhPaEsc(p.size || '1em') + '"></span>' +
-            '<span class="icon-title">' + mrhPaEsc(p.title || '') + '</span>' +
-            '<span class="icon-remove" data-idx="' + i + '" onclick="mrhPaRemoveIcon(' + i + ')" title="Entfernen">&times;</span>';
+        item.setAttribute('data-idx', i);
+        item.innerHTML = 
+            '<span class="icon-preview fa ' + mrhPaEsc(iconClass) + '" style="color:' + mrhPaEsc(p.color || '#333') + ';font-size:' + mrhPaEsc(p.size || '1em') + '"></span>' +
+            '<span class="icon-title" title="' + mrhPaEsc(p.title || iconClass) + '">' + mrhPaEsc(p.title || iconClass) + '</span>' +
+            '<input type="color" class="icon-edit-color" value="' + mrhPaEsc(p.color || '#333333') + '" onchange="mrhPaEditIconColor(' + i + ', this.value)" title="Farbe aendern">' +
+            '<select class="icon-edit-size" onchange="mrhPaEditIconSize(' + i + ', this.value)" title="Groesse aendern">' +
+                '<option value="1em"' + (p.size === '1em' || !p.size ? ' selected' : '') + '>1em</option>' +
+                '<option value="1.2em"' + (p.size === '1.2em' ? ' selected' : '') + '>1.2em</option>' +
+                '<option value="1.5em"' + (p.size === '1.5em' ? ' selected' : '') + '>1.5em</option>' +
+                '<option value="2em"' + (p.size === '2em' ? ' selected' : '') + '>2em</option>' +
+            '</select>' +
+            '<span class="icon-remove" onclick="mrhPaRemoveIcon(' + i + ')" title="Entfernen">&times;</span>';
         list.appendChild(item);
     }
     
     // Update hidden JSON field
-    document.getElementById('mrh-pa-pictos-json').value = JSON.stringify(mrhPaCurrentPictos);
+    var jsonField = document.getElementById('mrh-pa-pictos-json');
+    if (jsonField) jsonField.value = JSON.stringify(mrhPaCurrentPictos);
     
-    // Update quickpick selected states
-    document.querySelectorAll('.mrh-pa-icon-quickpick-btn').forEach(function(btn) {
-        var icon = btn.getAttribute('data-icon');
-        var isSelected = mrhPaCurrentPictos.some(function(p) { 
-            return p.icon === icon || p.icon === 'fa ' + icon; 
-        });
-        btn.classList.toggle('selected', isSelected);
-    });
+    // Update library selected states
+    mrhPaUpdateLibrarySelection();
 }
 
-function mrhPaToggleQuickIcon(btn) {
-    var icon = btn.getAttribute('data-icon');
-    var title = btn.getAttribute('data-title');
-    var color = btn.getAttribute('data-color');
-    
-    // Check if already added
-    var existIdx = -1;
-    for (var i = 0; i < mrhPaCurrentPictos.length; i++) {
-        if (mrhPaCurrentPictos[i].icon === icon || mrhPaCurrentPictos[i].icon === 'fa ' + icon) {
-            existIdx = i;
-            break;
+function mrhPaEditIconColor(idx, color) {
+    if (mrhPaCurrentPictos[idx]) {
+        mrhPaCurrentPictos[idx].color = color;
+        // Update preview immediately without full re-render
+        var item = document.querySelector('.mrh-pa-icon-item[data-idx="' + idx + '"]');
+        if (item) {
+            var preview = item.querySelector('.icon-preview');
+            if (preview) preview.style.color = color;
         }
+        document.getElementById('mrh-pa-pictos-json').value = JSON.stringify(mrhPaCurrentPictos);
     }
-    
-    if (existIdx >= 0) {
-        // Remove
-        mrhPaCurrentPictos.splice(existIdx, 1);
-    } else {
-        // Add
-        mrhPaCurrentPictos.push({icon: icon, color: color, size: '1em', title: title});
-    }
-    
-    mrhPaRenderIcons();
 }
 
-function mrhPaAddCustomIcon() {
-    var iconClass = document.getElementById('mrh-pa-icon-custom-class').value.trim();
-    var title = document.getElementById('mrh-pa-icon-custom-title').value.trim();
-    var color = document.getElementById('mrh-pa-icon-custom-color').value;
-    var size = document.getElementById('mrh-pa-icon-custom-size').value;
-    
-    if (!iconClass) { alert('Bitte Icon-Klasse eingeben (z.B. fa-star)'); return; }
-    if (!iconClass.startsWith('fa-')) iconClass = 'fa-' + iconClass;
-    if (!title) title = iconClass.replace('fa-', '');
-    
-    mrhPaCurrentPictos.push({icon: iconClass, color: color, size: size, title: title});
-    mrhPaRenderIcons();
-    
-    // Clear inputs
-    document.getElementById('mrh-pa-icon-custom-class').value = '';
-    document.getElementById('mrh-pa-icon-custom-title').value = '';
+function mrhPaEditIconSize(idx, size) {
+    if (mrhPaCurrentPictos[idx]) {
+        mrhPaCurrentPictos[idx].size = size;
+        // Update preview immediately
+        var item = document.querySelector('.mrh-pa-icon-item[data-idx="' + idx + '"]');
+        if (item) {
+            var preview = item.querySelector('.icon-preview');
+            if (preview) preview.style.fontSize = size;
+        }
+        document.getElementById('mrh-pa-pictos-json').value = JSON.stringify(mrhPaCurrentPictos);
+    }
 }
 
 function mrhPaRemoveIcon(idx) {
@@ -608,10 +609,93 @@ function mrhPaRemoveIcon(idx) {
     mrhPaRenderIcons();
 }
 
-// Init icons on page load
-document.addEventListener('DOMContentLoaded', function() {
+function mrhPaAddIconFromLibrary(iconClass) {
+    // Check if already added
+    var existIdx = -1;
+    for (var i = 0; i < mrhPaCurrentPictos.length; i++) {
+        var existing = (mrhPaCurrentPictos[i].icon || '').replace(/^fa\s+/, '');
+        if (existing === iconClass || existing === iconClass.replace('fa-', '')) {
+            existIdx = i;
+            break;
+        }
+    }
+    
+    if (existIdx >= 0) {
+        // Remove if already exists (toggle)
+        mrhPaCurrentPictos.splice(existIdx, 1);
+    } else {
+        // Add new
+        var title = document.getElementById('mrh-pa-add-title').value.trim() || iconClass.replace('fa-', '').replace(/-/g, ' ');
+        var color = document.getElementById('mrh-pa-add-color').value || '#333333';
+        var size = document.getElementById('mrh-pa-add-size').value || '1em';
+        
+        mrhPaCurrentPictos.push({
+            icon: iconClass,
+            color: color,
+            size: size,
+            title: title
+        });
+        
+        // Clear title for next
+        document.getElementById('mrh-pa-add-title').value = '';
+    }
+    
     mrhPaRenderIcons();
-});
+}
+
+// ============================================================
+// ICON LIBRARY - Build & Search
+// ============================================================
+function mrhPaBuildLibrary() {
+    var grid = document.getElementById('mrh-pa-icon-library-grid');
+    if (!grid) return;
+    
+    var html = '';
+    for (var i = 0; i < mrhPaAllIcons.length; i++) {
+        var icon = mrhPaAllIcons[i];
+        var name = icon.replace('fa-', '');
+        html += '<div class="mrh-pa-icon-lib-btn" data-icon="' + icon + '" data-name="' + name + '" onclick="mrhPaAddIconFromLibrary(\'' + icon + '\')">' +
+            '<span class="fa ' + icon + '"></span>' +
+            '<span class="icon-name">' + name + '</span>' +
+            '</div>';
+    }
+    grid.innerHTML = html;
+    mrhPaUpdateLibrarySelection();
+}
+
+function mrhPaFilterLibrary(query) {
+    var grid = document.getElementById('mrh-pa-icon-library-grid');
+    if (!grid) return;
+    
+    var buttons = grid.querySelectorAll('.mrh-pa-icon-lib-btn');
+    var q = query.toLowerCase().trim();
+    var visible = 0;
+    
+    for (var i = 0; i < buttons.length; i++) {
+        var name = buttons[i].getAttribute('data-name');
+        var show = !q || name.indexOf(q) !== -1;
+        buttons[i].style.display = show ? '' : 'none';
+        if (show) visible++;
+    }
+    
+    var countEl = document.getElementById('mrh-pa-icon-lib-count');
+    if (countEl) countEl.textContent = visible + ' Icons' + (q ? ' gefunden' : '');
+}
+
+function mrhPaUpdateLibrarySelection() {
+    var grid = document.getElementById('mrh-pa-icon-library-grid');
+    if (!grid) return;
+    
+    var buttons = grid.querySelectorAll('.mrh-pa-icon-lib-btn');
+    for (var i = 0; i < buttons.length; i++) {
+        var icon = buttons[i].getAttribute('data-icon');
+        var isSelected = mrhPaCurrentPictos.some(function(p) {
+            var existing = (p.icon || '').replace(/^fa\s+/, '');
+            return existing === icon || existing === icon.replace('fa-', '');
+        });
+        buttons[i].classList.toggle('selected', isSelected);
+    }
+}
 
 // ============================================================
 // CANNABIS CUP PREVIEW
@@ -619,6 +703,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function mrhPaUpdateCupsPreview() {
     var count = parseInt(document.getElementById('mrh-pa-cups-input').value) || 0;
     var preview = document.getElementById('mrh-pa-cups-preview');
+    if (!preview) return;
     preview.innerHTML = '';
     for (var i = 0; i < Math.min(count, 20); i++) {
         var span = document.createElement('span');
@@ -663,7 +748,8 @@ function mrhPaSwitchLang(langId, el) {
     document.querySelectorAll('.mrh-pa-lang-tab').forEach(function(t) { t.classList.remove('active'); });
     document.querySelectorAll('.mrh-pa-lang-panel').forEach(function(p) { p.classList.remove('active'); });
     el.classList.add('active');
-    document.getElementById('mrh-pa-lang-' + langId).classList.add('active');
+    var panel = document.getElementById('mrh-pa-lang-' + langId);
+    if (panel) panel.classList.add('active');
 }
 
 // ============================================================
@@ -672,6 +758,7 @@ function mrhPaSwitchLang(langId, el) {
 var mrhPaCustomCounter = <?php echo max(count($custom ?? []), 0) + 10; ?>;
 function mrhPaAddCustomField(langId) {
     var container = document.getElementById('mrh-pa-custom-' + langId);
+    if (!container) return;
     var idx = mrhPaCustomCounter++;
     var row = document.createElement('div');
     row.className = 'mrh-pa-field-row mrh-pa-custom-row';
@@ -688,6 +775,7 @@ function mrhPaAddCustomField(langId) {
 // ============================================================
 function mrhPaAiFill(productsId) {
     var statusEl = document.getElementById('mrh-pa-ai-status');
+    if (!statusEl) return;
     statusEl.style.display = 'inline';
     statusEl.innerHTML = '<span class="fa fa-spinner fa-spin"></span> KI analysiert Beschreibung...';
     
@@ -808,4 +896,13 @@ function mrhPaEsc(str) {
     div.appendChild(document.createTextNode(str));
     return div.innerHTML;
 }
+
+// ============================================================
+// INIT ON PAGE LOAD
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+    mrhPaRenderIcons();
+    mrhPaBuildLibrary();
+    mrhPaAutoDetectPreset();
+});
 </script>
