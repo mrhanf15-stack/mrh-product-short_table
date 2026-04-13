@@ -434,14 +434,61 @@ function mrhPaAiFill(productsId) {
 function mrhPaFillFields(attrs) {
     for (var langId in attrs) {
         var langAttrs = attrs[langId];
+        
+        // Handle is_seed (global, not per language)
+        if (langAttrs.is_seed !== undefined) {
+            var seedEl = document.getElementById('mrh_pa_is_seed');
+            if (seedEl) {
+                seedEl.value = langAttrs.is_seed ? '1' : '0';
+                mrhPaHighlight(seedEl);
+            }
+        }
+        
+        // Handle standard fields
         for (var field in langAttrs) {
+            if (field === 'custom_fields' || field === 'is_seed' || field === 'ai_confidence') continue;
             var el = document.getElementById('mrh_pa_' + langId + '_' + field);
             if (el) {
                 el.value = langAttrs[field];
-                el.style.backgroundColor = '#ffffcc'; // Highlight AI-filled fields
-                setTimeout(function(e) { e.style.backgroundColor = ''; }.bind(null, el), 3000);
+                mrhPaHighlight(el);
+            }
+        }
+        
+        // Handle custom_fields
+        if (langAttrs.custom_fields && Array.isArray(langAttrs.custom_fields)) {
+            var container = document.getElementById('mrh-pa-custom-' + langId);
+            if (container) {
+                // Clear existing custom fields
+                container.innerHTML = '';
+                for (var i = 0; i < langAttrs.custom_fields.length; i++) {
+                    var cf = langAttrs.custom_fields[i];
+                    mrhPaCustomCounter++;
+                    var row = document.createElement('div');
+                    row.className = 'mrh-pa-field-row mrh-pa-custom-row';
+                    row.innerHTML = '<div class="mrh-pa-field-input" style="width:180px;flex:none;">' +
+                        '<input type="text" name="mrh_pa['+langId+'][custom]['+i+'][label]" value="' + mrhPaEsc(cf.label || '') + '" placeholder="Feldname">' +
+                        '</div><div class="mrh-pa-field-input">' +
+                        '<input type="text" name="mrh_pa['+langId+'][custom]['+i+'][value]" value="' + mrhPaEsc(cf.value || '') + '" placeholder="Wert">' +
+                        '</div><button type="button" class="mrh-pa-btn mrh-pa-btn-secondary" onclick="this.closest(\'.mrh-pa-custom-row\').remove()" title="Entfernen">&times;</button>';
+                    container.appendChild(row);
+                    // Highlight
+                    row.querySelectorAll('input').forEach(function(inp) { mrhPaHighlight(inp); });
+                }
             }
         }
     }
+}
+
+// Highlight helper
+function mrhPaHighlight(el) {
+    el.style.backgroundColor = '#ffffcc';
+    setTimeout(function() { el.style.backgroundColor = ''; }, 5000);
+}
+
+// Escape HTML for safe insertion
+function mrhPaEsc(str) {
+    var div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
 }
 </script>

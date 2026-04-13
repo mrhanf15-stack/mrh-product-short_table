@@ -34,7 +34,7 @@ class MrhProductAttributes {
         'type'           => ['Sorte', 'Type (Indica/Sativa)', 'select', 1, 3, 'sort'],
         'thc'            => ['THC', 'THC', 'text', 1, 4, 'thc'],
         'cbd'            => ['CBD', 'CBD', 'text', 1, 5, 'cbd_w'],
-        'cross'          => ['Kreuzung', 'Cross/Genetics', 'text', 2, 6, 'kreuzung'],
+        'cross_genetics'  => ['Kreuzung', 'Cross/Genetics', 'text', 2, 6, 'kreuzung'],
         'flowering_time' => ['Bluetezeit', 'Flowering Time', 'text', 2, 7, 'bluete'],
         'yield_indoor'   => ['Ertrag Indoor', 'Yield Indoor', 'text', 2, 8, 'ertrag_in'],
         'harvest_time'   => ['Erntezeit', 'Harvest Time', 'text', 2, 9, 'ernte'],
