@@ -510,7 +510,8 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
                     }
                     $custom = $custom_filtered;
                     foreach ($custom as $ci => $cf): ?>
-                        <div class="mrh-pa-field-row mrh-pa-custom-row">
+                        <div class="mrh-pa-field-row mrh-pa-custom-row" draggable="true">
+                            <span class="mrh-pa-field-drag" title="Drag zum Sortieren">&#9776;</span>
                             <div class="mrh-pa-field-input" style="width:180px;flex:none;">
                                 <input type="text" 
                                        name="mrh_pa[<?php echo $lid; ?>][custom][<?php echo $ci; ?>][label]"
@@ -1143,12 +1144,16 @@ function mrhPaAddCustomField(langId) {
     var idx = mrhPaCustomCounter++;
     var row = document.createElement('div');
     row.className = 'mrh-pa-field-row mrh-pa-custom-row';
-    row.innerHTML = '<div class="mrh-pa-field-input" style="width:180px;flex:none;">' +
+    row.setAttribute('draggable', 'true');
+    row.innerHTML = '<span class="mrh-pa-field-drag" title="Drag zum Sortieren">&#9776;</span>' +
+        '<div class="mrh-pa-field-input" style="width:180px;flex:none;">' +
         '<input type="text" name="mrh_pa['+langId+'][custom]['+idx+'][label]" placeholder="Feldname">' +
         '</div><div class="mrh-pa-field-input">' +
         '<input type="text" name="mrh_pa['+langId+'][custom]['+idx+'][value]" placeholder="Wert">' +
         '</div><button type="button" class="mrh-pa-btn mrh-pa-btn-secondary" onclick="this.closest(\'.mrh-pa-custom-row\').remove()" title="Entfernen">&times;</button>';
     container.appendChild(row);
+    // Init DnD for the new row
+    mrhPaInitCustomFieldDnD(row);
 }
 
 // ============================================================
@@ -1213,12 +1218,15 @@ function mrhPaFillFields(attrs) {
                     mrhPaCustomCounter++;
                     var row = document.createElement('div');
                     row.className = 'mrh-pa-field-row mrh-pa-custom-row';
-                    row.innerHTML = '<div class="mrh-pa-field-input" style="width:180px;flex:none;">' +
+                    row.setAttribute('draggable', 'true');
+                    row.innerHTML = '<span class="mrh-pa-field-drag" title="Drag zum Sortieren">&#9776;</span>' +
+                        '<div class="mrh-pa-field-input" style="width:180px;flex:none;">' +
                         '<input type="text" name="mrh_pa['+langId+'][custom]['+i+'][label]" value="' + mrhPaEsc(cf.label || '') + '" placeholder="Feldname">' +
                         '</div><div class="mrh-pa-field-input">' +
                         '<input type="text" name="mrh_pa['+langId+'][custom]['+i+'][value]" value="' + mrhPaEsc(cf.value || '') + '" placeholder="Wert">' +
                         '</div><button type="button" class="mrh-pa-btn mrh-pa-btn-secondary" onclick="this.closest(\'.mrh-pa-custom-row\').remove()" title="Entfernen">&times;</button>';
                     container.appendChild(row);
+                    mrhPaInitCustomFieldDnD(row);
                     row.querySelectorAll('input').forEach(function(inp) { mrhPaHighlight(inp); });
                 }
             }
@@ -1399,6 +1407,51 @@ function mrhPaInitFieldDragDrop() {
     });
 }
 
+// ============================================================
+// CUSTOM FIELD DRAG & DROP
+// ============================================================
+var mrhPaCustomDragEl = null;
+
+function mrhPaInitCustomFieldDnD(row) {
+    row.addEventListener('dragstart', function(e) {
+        mrhPaCustomDragEl = this;
+        this.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', 'custom');
+    });
+    row.addEventListener('dragend', function() {
+        this.classList.remove('dragging');
+        var container = this.closest('.mrh-pa-custom-fields');
+        if (container) {
+            container.querySelectorAll('.mrh-pa-custom-row').forEach(function(r) { r.classList.remove('drag-over-field'); });
+        }
+    });
+    row.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (mrhPaCustomDragEl && mrhPaCustomDragEl !== this && this.classList.contains('mrh-pa-custom-row')) {
+            this.classList.add('drag-over-field');
+        }
+    });
+    row.addEventListener('dragleave', function() {
+        this.classList.remove('drag-over-field');
+    });
+    row.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.classList.remove('drag-over-field');
+        if (mrhPaCustomDragEl && mrhPaCustomDragEl !== this && this.classList.contains('mrh-pa-custom-row')) {
+            this.parentNode.insertBefore(mrhPaCustomDragEl, this);
+        }
+        mrhPaCustomDragEl = null;
+    });
+}
+
+function mrhPaInitAllCustomFieldDnD() {
+    document.querySelectorAll('.mrh-pa-custom-row[draggable]').forEach(function(row) {
+        mrhPaInitCustomFieldDnD(row);
+    });
+}
+
 function mrhPaSyncFieldOrder(sourcePanel) {
     // Get the new order from the source panel
     var order = [];
@@ -1496,6 +1549,7 @@ document.addEventListener('DOMContentLoaded', function() {
     mrhPaAutoDetectPreset();
     mrhPaUpdateCupsPreview();
     mrhPaInitFieldDragDrop();
+    mrhPaInitAllCustomFieldDnD();
     // Hide old short_description - delay to let CKEditor init first
     if (mrhPaProductsId > 0) {
         setTimeout(mrhPaHideOldShortDesc, 500);
