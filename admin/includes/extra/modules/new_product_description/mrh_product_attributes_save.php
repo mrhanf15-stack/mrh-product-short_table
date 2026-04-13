@@ -19,7 +19,7 @@
  * @version 1.1.0
  */
 
-defined('_VALID_XTC') or die('Direct Access to this location is not allowed.');
+if (!defined('_VALID_XTC')) { return; }
 
 // Only process if our form data is present
 if (isset($_POST['mrh_pa']) && !empty($_POST['mrh_pa']['products_id'])) {

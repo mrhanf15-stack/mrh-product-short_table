@@ -11,7 +11,7 @@
  * --------------------------------------------------------------
  */
 
-defined('_VALID_XTC') or die('Direct Access to this location is not allowed.');
+if (!defined('_VALID_XTC')) { return; }
 
 // Menuename je nach Sprache
 $_mrh_pa_menu_name = 'MRH Produkteigenschaften';

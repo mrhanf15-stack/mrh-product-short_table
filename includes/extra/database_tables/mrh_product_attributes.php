@@ -10,7 +10,7 @@
  * @version 1.0.0
  */
 
-defined('_VALID_XTC') or die('Direct Access to this location is not allowed.');
+if (!defined('_VALID_XTC')) { return; }
 
 define('TABLE_MRH_PRODUCT_ATTRIBUTES', 'mrh_product_attributes');
 define('TABLE_MRH_PRODUCT_ATTRIBUTES_CONFIG', 'mrh_product_attributes_config');

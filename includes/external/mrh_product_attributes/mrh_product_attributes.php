@@ -9,7 +9,7 @@
  * @version 1.1.0
  */
 
-defined('_VALID_XTC') or die('Direct Access to this location is not allowed.');
+if (!defined('_VALID_XTC')) { return; }
 
 class MrhProductAttributes {
     

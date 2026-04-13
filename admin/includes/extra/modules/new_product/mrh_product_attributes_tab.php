@@ -18,7 +18,7 @@
  * @version 1.2.0
  */
 
-defined('_VALID_XTC') or die('Direct Access to this location is not allowed.');
+if (!defined('_VALID_XTC')) { return; }
 
 // Load module class
 if (!class_exists('MrhProductAttributes')) {
@@ -608,7 +608,37 @@ if (!empty($mrh_pa_first_attr)) {
 // ============================================================
 // FONTAWESOME 4.7 COMPLETE ICON LIST (730 icons)
 // ============================================================
-var mrhPaAllIcons = <?php echo file_get_contents(DIR_FS_CATALOG . 'includes/external/mrh_product_attributes/fa47_icons.json') ?: '["fa-leaf","fa-star","fa-heart","fa-fire","fa-bolt","fa-trophy","fa-medkit","fa-shield","fa-diamond","fa-eye"]'; ?>;
+var mrhPaAllIcons = <?php
+// Try to parse all icon classes from the installed FontAwesome CSS on the server
+$mrh_pa_fa_icons = [];
+$mrh_pa_fa_css_paths = [
+    DIR_FS_CATALOG . 'includes/external/mailhive/common/css/font-awesome/css/font-awesome.css',
+    DIR_FS_CATALOG . 'templates/' . CURRENT_TEMPLATE . '/css/font-awesome.min.css',
+    DIR_FS_CATALOG . 'templates/' . CURRENT_TEMPLATE . '/css/font-awesome.css',
+];
+foreach ($mrh_pa_fa_css_paths as $mrh_pa_fa_path) {
+    if (file_exists($mrh_pa_fa_path)) {
+        $mrh_pa_fa_css = file_get_contents($mrh_pa_fa_path);
+        if (preg_match_all('/\.(fa-[a-z0-9-]+):before/', $mrh_pa_fa_css, $mrh_pa_fa_matches)) {
+            $mrh_pa_fa_icons = array_values(array_unique($mrh_pa_fa_matches[1]));
+        }
+        break;
+    }
+}
+// Fallback to JSON file if CSS parsing failed
+if (empty($mrh_pa_fa_icons)) {
+    $mrh_pa_fa_json = DIR_FS_CATALOG . 'includes/external/mrh_product_attributes/fa47_icons.json';
+    if (file_exists($mrh_pa_fa_json)) {
+        $mrh_pa_fa_icons = json_decode(file_get_contents($mrh_pa_fa_json), true) ?: [];
+    }
+}
+// Final fallback
+if (empty($mrh_pa_fa_icons)) {
+    $mrh_pa_fa_icons = ['fa-leaf','fa-star','fa-heart','fa-fire','fa-bolt','fa-trophy','fa-medkit','fa-shield','fa-diamond','fa-eye','fa-female','fa-mars','fa-home','fa-sun-o','fa-pagelines','fa-snowflake-o'];
+}
+sort($mrh_pa_fa_icons);
+echo json_encode($mrh_pa_fa_icons);
+?>;
 
 // ============================================================
 // PICTOS / ICON EDITOR v1.2.0
