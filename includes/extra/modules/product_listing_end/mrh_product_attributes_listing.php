@@ -16,7 +16,7 @@
  * @version 1.0.0
  */
 
-if (!defined('_VALID_XTC')) { return; }
+if (!defined('TABLE_CONFIGURATION')) { return; }
 
 // Only process if module class is loaded and $module_content exists
 if (class_exists('MrhProductAttributes') && isset($module_content) && is_array($module_content)) {

@@ -10,7 +10,7 @@
  * @version 1.0.0
  */
 
-if (!defined('_VALID_XTC')) { return; }
+if (!defined('TABLE_CONFIGURATION')) { return; }
 
 // Load the main module class
 if (!class_exists('MrhProductAttributes')) {

@@ -17,7 +17,7 @@
  * @version 1.0.0
  */
 
-if (!defined('_VALID_XTC')) { return; }
+if (!defined('TABLE_CONFIGURATION')) { return; }
 
 if (class_exists('MrhProductAttributes') && isset($product->data['products_id'])) {
     
