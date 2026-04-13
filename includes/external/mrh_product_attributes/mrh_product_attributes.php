@@ -575,24 +575,27 @@ class MrhProductAttributes {
         // 1. Gender badge – uses global badge config from DB
         if ($gender === 'feminized') {
             $fem_cfg = self::getBadgeConfig('gender_feminized');
+            $show = !empty($fem_cfg['show_text']);
             if ($fem_cfg['is_svg']) {
-                $badges[] = self::badgeSpanSvg('fem', $fem_cfg['icon'], self::translateSelectValue('gender', 'feminized'));
+                $badges[] = self::badgeSpanSvg('fem', $fem_cfg['icon'], self::translateSelectValue('gender', 'feminized'), $show);
             } else {
-                $badges[] = self::badgeSpan('fem', $fem_cfg['icon'], self::translateSelectValue('gender', 'feminized'), $fem_cfg['style']);
+                $badges[] = self::badgeSpan('fem', $fem_cfg['icon'], self::translateSelectValue('gender', 'feminized'), $fem_cfg['style'], $show);
             }
         } elseif ($gender === 'regular') {
             $reg_cfg = self::getBadgeConfig('gender_regular');
+            $show = !empty($reg_cfg['show_text']);
             if ($reg_cfg['is_svg']) {
-                $badges[] = self::badgeSpanSvg('reg', $reg_cfg['icon'], self::translateSelectValue('gender', 'regular'));
+                $badges[] = self::badgeSpanSvg('reg', $reg_cfg['icon'], self::translateSelectValue('gender', 'regular'), $show);
             } else {
-                $badges[] = self::badgeSpan('reg', $reg_cfg['icon'], self::translateSelectValue('gender', 'regular'), $reg_cfg['style']);
+                $badges[] = self::badgeSpan('reg', $reg_cfg['icon'], self::translateSelectValue('gender', 'regular'), $reg_cfg['style'], $show);
             }
         } elseif ($gender === 'autoflower') {
             $fem_cfg = self::getBadgeConfig('gender_feminized');
+            $show = !empty($fem_cfg['show_text']);
             if ($fem_cfg['is_svg']) {
-                $badges[] = self::badgeSpanSvg('fem', $fem_cfg['icon'], self::translateSelectValue('gender', 'autoflower'));
+                $badges[] = self::badgeSpanSvg('fem', $fem_cfg['icon'], self::translateSelectValue('gender', 'autoflower'), $show);
             } else {
-                $badges[] = self::badgeSpan('fem', $fem_cfg['icon'], self::translateSelectValue('gender', 'autoflower'), $fem_cfg['style']);
+                $badges[] = self::badgeSpan('fem', $fem_cfg['icon'], self::translateSelectValue('gender', 'autoflower'), $fem_cfg['style'], $show);
             }
         }
         
@@ -601,7 +604,8 @@ class MrhProductAttributes {
         //    - Photoperiodisch: TEXT ONLY badge (kein Icon, mehrsprachig uebersetzt)
         if ($flowering === 'autoflower') {
             $auto_cfg = self::getBadgeConfig('flowering_autoflower');
-            $badges[] = self::badgeSpan('auto', $auto_cfg['icon'], self::translateSelectValue('flowering_type', 'autoflower'), $auto_cfg['style']);
+            $show = !empty($auto_cfg['show_text']);
+            $badges[] = self::badgeSpan('auto', $auto_cfg['icon'], self::translateSelectValue('flowering_type', 'autoflower'), $auto_cfg['style'], $show);
         } elseif ($flowering === 'photoperiod') {
             // Photoperiodisch = NUR Text, kein Icon
             $badges[] = self::badgeTextOnly('photo', self::translateSelectValue('flowering_type', 'photoperiod'));
@@ -699,23 +703,31 @@ class MrhProductAttributes {
     /**
      * Build a single badge span.
      */
-    private static function badgeSpan($type, $icon, $title, $fa_style = 'solid') {
+    private static function badgeSpan($type, $icon, $title, $fa_style = 'solid', $show_text = false) {
         $fa_prefix = 'fa-solid';
         if ($fa_style === 'regular') $fa_prefix = 'fa-regular';
         elseif ($fa_style === 'brands') $fa_prefix = 'fa-brands';
-        return '<span class="mrh-type-badge mrh-badge-' . $type . '" title="' . htmlspecialchars($title) . '">' 
-            . '<span class="' . $fa_prefix . ' fa-fw ' . $icon . '"></span>'
-            . '</span>';
+        $html = '<span class="mrh-type-badge mrh-badge-' . $type . '" title="' . htmlspecialchars($title) . '">' 
+            . '<span class="' . $fa_prefix . ' fa-fw ' . $icon . '"></span>';
+        if ($show_text && !empty($title)) {
+            $html .= '<span class="mrh-badge-label">' . htmlspecialchars($title) . '</span>';
+        }
+        $html .= '</span>';
+        return $html;
     }
     
     /**
      * Build a single SVG badge span.
      */
-    private static function badgeSpanSvg($type, $svg_path, $title) {
+    private static function badgeSpanSvg($type, $svg_path, $title, $show_text = false) {
         $svg_url = '/' . ltrim($svg_path, '/');
-        return '<span class="mrh-type-badge mrh-badge-' . $type . '" title="' . htmlspecialchars($title) . '">' 
-            . '<img src="' . htmlspecialchars($svg_url) . '" alt="' . htmlspecialchars($title) . '" style="width:14px;height:14px;vertical-align:middle" class="mrh-badge-svg">'
-            . '</span>';
+        $html = '<span class="mrh-type-badge mrh-badge-' . $type . '" title="' . htmlspecialchars($title) . '">' 
+            . '<img src="' . htmlspecialchars($svg_url) . '" alt="' . htmlspecialchars($title) . '" style="width:14px;height:14px;vertical-align:middle" class="mrh-badge-svg">';
+        if ($show_text && !empty($title)) {
+            $html .= '<span class="mrh-badge-label">' . htmlspecialchars($title) . '</span>';
+        }
+        $html .= '</span>';
+        return $html;
     }
     
     /**
@@ -739,18 +751,21 @@ class MrhProductAttributes {
             'style' => 'solid',
             'is_svg' => false,
             'color' => '',
+            'show_text' => false,
         ],
         'gender_regular' => [
             'icon'  => 'templates/tpl_mrh_2026/img/badges/male.svg',
             'style' => 'solid',
             'is_svg' => true,
             'color' => '',
+            'show_text' => false,
         ],
         'flowering_autoflower' => [
             'icon'  => 'fa-bolt',
             'style' => 'solid',
             'is_svg' => false,
             'color' => '',
+            'show_text' => false,
         ],
         'flowering_photoperiod' => [
             'icon'  => '',
@@ -758,6 +773,7 @@ class MrhProductAttributes {
             'is_svg' => false,
             'color' => '',
             'text_only' => true,
+            'show_text' => true,
         ],
     ];
     

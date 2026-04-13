@@ -324,6 +324,7 @@ if ($action === 'save_config' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 'style'  => trim($_POST['badge_style_' . $bk] ?? 'solid'),
                 'is_svg' => !empty($_POST['badge_is_svg_' . $bk]),
                 'color'  => trim($_POST['badge_color_' . $bk] ?? ''),
+                'show_text' => !empty($_POST['badge_show_text_' . $bk]),
             ];
             if ($bk === 'flowering_photoperiod') {
                 $cfg['text_only'] = true;
@@ -581,6 +582,12 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'stats';
                                     <input type="color" name="badge_color_<?php echo $bk; ?>" 
                                            value="<?php echo htmlspecialchars($cfg['color'] ?: '#333333'); ?>"
                                            style="width:40px; height:30px; border:1px solid #ccc;">
+                                </div>
+                                <div>
+                                    <label style="font-size:11px; color:#666;">Text anzeigen?</label><br>
+                                    <input type="checkbox" name="badge_show_text_<?php echo $bk; ?>" value="1" 
+                                           <?php echo !empty($cfg['show_text']) ? 'checked' : ''; ?>>
+                                    <span style="font-size:10px; color:#888;">Label neben Icon</span>
                                 </div>
                                 <div style="margin-left:10px;">
                                     <?php if (!empty($cfg['is_svg'])): ?>
