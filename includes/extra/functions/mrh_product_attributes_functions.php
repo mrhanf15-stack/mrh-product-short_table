@@ -10,7 +10,7 @@
  * @version 1.0.0
  */
 
-if (!defined('TABLE_CONFIGURATION')) { return; }
+if (defined('TABLE_CONFIGURATION')):
 
 /**
  * Get structured product attributes for a product.
@@ -68,3 +68,5 @@ function mrh_has_product_attributes($products_id, $language_id = 0) {
     $attrs = MrhProductAttributes::getAttributes($products_id, $language_id);
     return !empty($attrs) && (int)($attrs['fields_filled'] ?? 0) >= 1;
 }
+
+endif; // TABLE_CONFIGURATION

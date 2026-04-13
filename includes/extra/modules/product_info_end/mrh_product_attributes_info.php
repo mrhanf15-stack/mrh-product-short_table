@@ -14,7 +14,8 @@
  * - $mrh_attrs: Raw attributes array
  *
  * @package MRH_Product_Attributes
- * @version 1.0.0
+ * @version 1.1.0
+ * @note Uses $info_smarty (not $smarty) because product_info.php renders via $info_smarty->fetch()
  */
 
 if (!defined('TABLE_CONFIGURATION')) { return; }
@@ -27,16 +28,16 @@ if (class_exists('MrhProductAttributes') && isset($product->data['products_id'])
     $mrh_pa_min_fields = (int)MrhProductAttributes::getConfig('min_fields_for_display', 3);
     
     if ($mrh_pa_attrs && (int)($mrh_pa_attrs['fields_filled'] ?? 0) >= $mrh_pa_min_fields) {
-        $smarty->assign('mrh_badges', MrhProductAttributes::buildBadgeHTML($mrh_pa_attrs));
-        $smarty->assign('mrh_mini_table', MrhProductAttributes::buildMiniTable($mrh_pa_attrs, 'detail'));
-        $smarty->assign('mrh_has_attrs', true);
-        $smarty->assign('mrh_is_seed', (bool)($mrh_pa_attrs['is_seed'] ?? true));
-        $smarty->assign('mrh_attrs', $mrh_pa_attrs);
+        $info_smarty->assign('mrh_badges', MrhProductAttributes::buildBadgeHTML($mrh_pa_attrs));
+        $info_smarty->assign('mrh_mini_table', MrhProductAttributes::buildMiniTable($mrh_pa_attrs, 'detail'));
+        $info_smarty->assign('mrh_has_attrs', true);
+        $info_smarty->assign('mrh_is_seed', (bool)($mrh_pa_attrs['is_seed'] ?? true));
+        $info_smarty->assign('mrh_attrs', $mrh_pa_attrs);
     } else {
-        $smarty->assign('mrh_badges', '');
-        $smarty->assign('mrh_mini_table', '');
-        $smarty->assign('mrh_has_attrs', false);
-        $smarty->assign('mrh_is_seed', true);
-        $smarty->assign('mrh_attrs', []);
+        $info_smarty->assign('mrh_badges', '');
+        $info_smarty->assign('mrh_mini_table', '');
+        $info_smarty->assign('mrh_has_attrs', false);
+        $info_smarty->assign('mrh_is_seed', true);
+        $info_smarty->assign('mrh_attrs', []);
     }
 }
