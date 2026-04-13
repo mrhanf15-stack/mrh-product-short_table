@@ -590,6 +590,18 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
         <div class="mrh-pa-icon-section">
             <h4><span class="fa fa-paint-brush"></span> Picto-Icons (Badges) — Editor</h4>
             
+            <!-- Auto-Badge Vorschau (Geschlecht + Bluetentyp) -->
+            <div id="mrh-pa-auto-badges-preview" style="background:#f0f4f8; border:1px solid #d1d9e6; border-radius:8px; padding:12px 16px; margin-bottom:14px;">
+                <div style="font-size:12px; font-weight:700; color:#2c3e50; margin-bottom:8px;">
+                    <span class="fa fa-shield-halved" style="color:#27ae60;"></span>
+                    Automatische Badges (werden aus Geschlecht &amp; Bluetentyp generiert):
+                    <a href="mrh_product_attributes.php?tab=config" style="font-size:11px; color:#27ae60; margin-left:8px;">Global bearbeiten &rarr;</a>
+                </div>
+                <div id="mrh-pa-auto-badges-bar" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                    <span style="color:#999; font-size:12px;" id="mrh-pa-auto-badges-empty">Bitte Geschlecht &amp; Bluetentyp waehlen, um die Vorschau zu sehen.</span>
+                </div>
+            </div>
+            
             <!-- Current icons list (editable + draggable) -->
             <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:6px;">
                 Aktuelle Icons (Drag &amp; Drop zum Sortieren, Farbe/Groesse klicken):
