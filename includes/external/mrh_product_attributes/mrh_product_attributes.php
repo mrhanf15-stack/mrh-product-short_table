@@ -14,7 +14,7 @@ if (!defined('TABLE_CONFIGURATION')) { return; }
 class MrhProductAttributes {
     
     /** @var string Module version */
-    const VERSION = '1.6.0';
+    const VERSION = '1.8.0';
     
     /** @var string DB table name */
     const TABLE = 'mrh_product_attributes';
@@ -600,15 +600,16 @@ class MrhProductAttributes {
         }
         
         // 2. Flowering type badge
-        //    - Autoflowering: Icon badge (fa-bolt)
-        //    - Photoperiodisch: TEXT ONLY badge (kein Icon, mehrsprachig uebersetzt)
+        //    - Autoflowering: Icon badge (fa-gauge-high)
+        //    - Photoperiodisch: Sun Icon badge (fa-sun)
         if ($flowering === 'autoflower') {
             $auto_cfg = self::getBadgeConfig('flowering_autoflower');
             $show = !empty($auto_cfg['show_text']);
             $badges[] = self::badgeSpan('auto', $auto_cfg['icon'], self::translateSelectValue('flowering_type', 'autoflower'), $auto_cfg['style'], $show);
         } elseif ($flowering === 'photoperiod') {
-            // Photoperiodisch = NUR Text, kein Icon
-            $badges[] = self::badgeTextOnly('photo', self::translateSelectValue('flowering_type', 'photoperiod'));
+            $photo_cfg = self::getBadgeConfig('flowering_photoperiod');
+            $show = !empty($photo_cfg['show_text']);
+            $badges[] = self::badgeSpan('photo', $photo_cfg['icon'], self::translateSelectValue('flowering_type', 'photoperiod'), $photo_cfg['style'], $show);
         }
         
         // 3. Custom picto icons from DB (supports FA classes and SVG paths)
@@ -746,7 +747,8 @@ class MrhProductAttributes {
     
     /**
      * Build a TEXT-ONLY badge (no icon).
-     * Used for Photoperiodisch – displays only translated text.
+     * Legacy method – kept for backward compatibility.
+     * Photoperiodisch now uses fa-sun icon via badgeSpan().
      */
     private static function badgeTextOnly($type, $title) {
         return '<span class="mrh-type-badge mrh-badge-' . $type . ' mrh-badge-textonly" title="' . htmlspecialchars($title) . '">' 
@@ -775,19 +777,18 @@ class MrhProductAttributes {
             'show_text' => false,
         ],
         'flowering_autoflower' => [
-            'icon'  => 'fa-bolt',
+            'icon'  => 'fa-gauge-high',
             'style' => 'solid',
             'is_svg' => false,
             'color' => '',
             'show_text' => false,
         ],
         'flowering_photoperiod' => [
-            'icon'  => '',
+            'icon'  => 'fa-sun',
             'style' => 'solid',
             'is_svg' => false,
             'color' => '',
-            'text_only' => true,
-            'show_text' => true,
+            'show_text' => false,
         ],
     ];
     

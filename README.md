@@ -182,10 +182,10 @@ Das Modul generiert Badges in der Original-Konfigurator-Struktur:
 <span class="picto templatestyle">
   <span class="mrh-badge-bar">
     <span class="mrh-type-badge mrh-badge-fem" title="Feminisiert">
-      <span class="fa fa-fw fa-venus"></span>
+      <span class="fa-solid fa-fw fa-venus"></span>
     </span>
     <span class="mrh-type-badge mrh-badge-photo" title="Photoperiodisch">
-      <span class="fa fa-fw fa-sun"></span>
+      <span class="fa-solid fa-fw fa-sun"></span>
     </span>
   </span>
 </span>

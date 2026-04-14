@@ -326,10 +326,7 @@ if ($action === 'save_config' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 'color'  => trim($_POST['badge_color_' . $bk] ?? ''),
                 'show_text' => !empty($_POST['badge_show_text_' . $bk]),
             ];
-            if ($bk === 'flowering_photoperiod') {
-                $cfg['text_only'] = true;
-                $cfg['icon'] = ''; // Photoperiodisch is always text-only
-            }
+            // flowering_photoperiod: Sun Icon (fa-sun) – konfigurierbar wie alle anderen Badges
             MrhProductAttributes::saveBadgeConfig($bk, $cfg);
         }
     }
@@ -537,27 +534,16 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'stats';
                         'gender_feminized'      => ['Feminisiert (Geschlecht)', 'fa-venus', false],
                         'gender_regular'         => ['Regulaer (Geschlecht)', 'male.svg', true],
                         'flowering_autoflower'   => ['Autoflowering (Bluetentyp)', 'fa-bolt', false],
-                        'flowering_photoperiod'  => ['Photoperiodisch (Bluetentyp)', 'Nur Text', false],
+                        'flowering_photoperiod'  => ['Photoperiodisch (Bluetentyp)', 'fa-sun', false],
                     ];
                     foreach ($badge_configs as $bk => $cfg):
                         $bl = $badge_labels[$bk] ?? [$bk, '', false];
-                        $is_photo = ($bk === 'flowering_photoperiod');
                     ?>
                     <div class="mrh-pa-config-row" style="background:#f8f9fa; border-radius:6px; padding:12px; margin-bottom:10px;">
                         <div class="mrh-pa-config-label" style="width:220px;">
                             <strong><?php echo htmlspecialchars($bl[0]); ?></strong>
-                            <?php if ($is_photo): ?>
-                                <br><span style="font-size:11px; color:#e67e22;">&#9888; Nur Text, kein Icon</span>
-                            <?php endif; ?>
                         </div>
                         <div class="mrh-pa-config-input" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                            <?php if ($is_photo): ?>
-                                <input type="hidden" name="badge_icon_<?php echo $bk; ?>" value="">
-                                <span style="font-size:13px; color:#27ae60; font-weight:600;">
-                                    Text-Badge: Wird automatisch in der jeweiligen Sprache angezeigt
-                                    (DE: Photoperiodisch, EN: Photoperiod, FR: Photop&eacute;riode, ES: Fotoper&iacute;odo)
-                                </span>
-                            <?php else: ?>
                                 <div>
                                     <label style="font-size:11px; color:#666;">Icon-Klasse / SVG-Pfad:</label><br>
                                     <input type="text" name="badge_icon_<?php echo $bk; ?>" 
@@ -599,7 +585,6 @@ $active_tab = isset($_GET['tab']) ? $_GET['tab'] : 'stats';
                                     <?php endif; ?>
                                     <span style="font-size:11px; color:#999;">Vorschau</span>
                                 </div>
-                            <?php endif; ?>
                         </div>
                     </div>
                     <?php endforeach; ?>
