@@ -1,10 +1,19 @@
 <?php
 /**
  * MRH Product Attributes - Product Listing Integration
- * Autoinclude: ~/includes/extra/modules/product_listing_end/
- * 
- * Assigns structured product attributes to Smarty variables
- * for use in listing templates (product_listing_include.html).
+ * Autoinclude: ~/includes/extra/modules/product_listing_content_ready/
+ *
+ * WICHTIG: Diese Datei MUSS im Hook "product_listing_content_ready" liegen,
+ * NICHT in "product_listing_end"! Der Hook product_listing_end wird NACH dem
+ * $module_smarty->assign('module_content', ...) aufgerufen, sodass Aenderungen
+ * an $module_content dort keine Wirkung mehr haben.
+ *
+ * Reihenfolge in includes/modules/product_listing.php:
+ *   1. product_listing_begin     -> vor DB-Query
+ *   2. $module_content wird befuellt (while-Schleife)
+ *   3. product_listing_content_ready -> HIER: $module_content anreichern
+ *   4. $module_smarty->assign('module_content', $module_content)
+ *   5. product_listing_end       -> zu spaet fuer $module_content
  *
  * Available Smarty variables after this hook:
  * - $module_content[x].MRH_BADGES: Badge HTML (picto templatestyle structure)
@@ -13,7 +22,8 @@
  * - $module_content[x].MRH_IS_SEED: Boolean - is seed product
  *
  * @package MRH_Product_Attributes
- * @version 1.0.0
+ * @version 1.1.0
+ * @fix 2026-04-15 Hook von product_listing_end nach product_listing_content_ready verschoben
  */
 
 if (!defined('TABLE_CONFIGURATION')) { return; }
