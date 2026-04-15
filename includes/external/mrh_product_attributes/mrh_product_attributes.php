@@ -6,7 +6,7 @@
  * for structured product attributes (gender, THC, CBD, cross, etc.)
  *
  * @package MRH_Product_Attributes
- * @version 1.5.0
+ * @version 1.10.0
  */
 
 if (!defined('TABLE_CONFIGURATION')) { return; }
@@ -14,7 +14,7 @@ if (!defined('TABLE_CONFIGURATION')) { return; }
 class MrhProductAttributes {
 
     /** @var string Module version */
-    const VERSION = '1.9.3';
+    const VERSION = '1.10.0';
 
     /** @var string DB table name */
     const TABLE = 'mrh_product_attributes';
@@ -405,6 +405,8 @@ class MrhProductAttributes {
      *
      * LISTING/BOX context: Always exactly 3 rows.
      * DETAIL context: Show all filled fields (no 3-row limit).
+     *
+     * v1.10.0: Inline <style> blocks removed – all marker styling via external CSS.
      */
     public static function buildMiniTable($attrs, $context = 'listing') {
         if (empty($attrs)) return '';
@@ -471,7 +473,7 @@ class MrhProductAttributes {
 
             if (empty($rows)) return '';
             $class = 'mrh-attr-table mrh-attr-' . $context;
-            return '<style>.mrh-attr-table td.mrh-mark-thc,.mrh-attr-table td.mrh-mark-cbd,.mrh-attr-table td.mrh-mark-fem,.mrh-attr-table td.mrh-mark-reg{position:relative;padding-left:12px}.mrh-attr-table td.mrh-mark-thc::before,.mrh-attr-table td.mrh-mark-cbd::before,.mrh-attr-table td.mrh-mark-fem::before,.mrh-attr-table td.mrh-mark-reg::before{content:"";position:absolute;left:0;top:4px;bottom:4px;width:4px;border-radius:2px}.mrh-attr-table td.mrh-mark-thc::before{background:#1a3a5c}.mrh-attr-table td.mrh-mark-cbd::before{background:#8b1a2b}.mrh-attr-table td.mrh-mark-fem::before{background:var(--tpl-badge-fem-bg,#fc5b96)}.mrh-attr-table td.mrh-mark-reg::before{background:var(--tpl-badge-reg-bg,#2ea2f0)}</style><table class="' . $class . ' tebals"><tbody>' . implode('', $rows) . '</tbody></table>';
+            return '<table class="' . $class . ' tebals"><tbody>' . implode('', $rows) . '</tbody></table>';
         }
 
         // LISTING/BOX context: Always exactly 3 rows
@@ -530,7 +532,7 @@ class MrhProductAttributes {
         }
 
         $class = 'mrh-attr-table mrh-attr-' . $context;
-        return '<style>.mrh-attr-table td.mrh-mark-thc,.mrh-attr-table td.mrh-mark-cbd,.mrh-attr-table td.mrh-mark-fem,.mrh-attr-table td.mrh-mark-reg{position:relative;padding-left:12px}.mrh-attr-table td.mrh-mark-thc::before,.mrh-attr-table td.mrh-mark-cbd::before,.mrh-attr-table td.mrh-mark-fem::before,.mrh-attr-table td.mrh-mark-reg::before{content:"";position:absolute;left:0;top:4px;bottom:4px;width:4px;border-radius:2px}.mrh-attr-table td.mrh-mark-thc::before{background:#1a3a5c}.mrh-attr-table td.mrh-mark-cbd::before{background:#8b1a2b}.mrh-attr-table td.mrh-mark-fem::before{background:var(--tpl-badge-fem-bg,#fc5b96)}.mrh-attr-table td.mrh-mark-reg::before{background:var(--tpl-badge-reg-bg,#2ea2f0)}</style><table class="' . $class . ' tebals"><tbody>' . implode('', $rows) . '</tbody></table>';
+        return '<table class="' . $class . ' tebals"><tbody>' . implode('', $rows) . '</tbody></table>';
     }
 
     /**
