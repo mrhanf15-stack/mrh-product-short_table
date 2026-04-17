@@ -14,8 +14,9 @@
  * - $mrh_attrs: Raw attributes array
  *
  * @package MRH_Product_Attributes
- * @version 1.1.0
+ * @version 1.2.0
  * @note Uses $info_smarty (not $smarty) because product_info.php renders via $info_smarty->fetch()
+ * @fix 2026-04-17 Legacy-Badge-Fallback: picto templatestyle aus short_description extrahieren
  */
 
 if (!defined('TABLE_CONFIGURATION')) { return; }
@@ -34,9 +35,14 @@ if (class_exists('MrhProductAttributes') && isset($product->data['products_id'])
         $info_smarty->assign('mrh_is_seed', (bool)($mrh_pa_attrs['is_seed'] ?? true));
         $info_smarty->assign('mrh_attrs', $mrh_pa_attrs);
     } else {
-        $info_smarty->assign('mrh_badges', '');
+        // Fallback: Extract legacy picto badges from short_description
+        $mrh_pa_legacy_badges = '';
+        if (function_exists('mrh_extract_legacy_badges') && isset($product->data['products_short_description'])) {
+            $mrh_pa_legacy_badges = mrh_extract_legacy_badges($product->data['products_short_description']);
+        }
+        $info_smarty->assign('mrh_badges', $mrh_pa_legacy_badges);
         $info_smarty->assign('mrh_mini_table', '');
-        $info_smarty->assign('mrh_has_attrs', false);
+        $info_smarty->assign('mrh_has_attrs', !empty($mrh_pa_legacy_badges));
         $info_smarty->assign('mrh_is_seed', true);
         $info_smarty->assign('mrh_attrs', []);
     }
