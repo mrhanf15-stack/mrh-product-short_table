@@ -7,7 +7,8 @@
  * These functions are available in all frontend PHP files.
  *
  * @package MRH_Product_Attributes
- * @version 1.0.0
+ * @version 1.4.0
+ * @fix 2026-04-17 Regex greedy fix + Legacy-Badges immer anzeigen (nicht filtern)
  */
 
 if (defined('TABLE_CONFIGURATION')):
@@ -81,6 +82,7 @@ function mrh_has_product_attributes($products_id, $language_id = 0) {
  *
  * @param string $short_description Raw products_short_description HTML
  * @return string Badge HTML or empty string
+ * @version 1.4.0 - Fixed regex: greedy match for div content
  */
 function mrh_extract_legacy_badges($short_description) {
     if (empty($short_description)) return '';
@@ -93,39 +95,30 @@ function mrh_extract_legacy_badges($short_description) {
     $badges = [];
 
     // Match <div class="...picto...templatestyle...">...all content...</div>
-    // and  <span class="...picto...templatestyle...">...all content...</span>
-    // Two separate patterns because inner content contains nested spans
-    // which would break a single pattern with </(?:div|span)>
-    $pattern_div  = '/<div\s+class="([^"]*picto[^"]*templatestyle[^"]*)">(.+?)<\/div>/si';
-    $pattern_span = '/<span\s+class="([^"]*picto[^"]*templatestyle[^"]*)">(.+?)<\/span>\s*<\/span>/si';
-    
-    // Try div first (most common in legacy data), then span
+    // IMPORTANT: Use GREEDY (.+) not lazy (.+?) because the inner content
+    // contains multiple <span>...</span> elements and we need ALL of them
+    // up to the closing </div>
+    $pattern_div = '/<div\s+class="([^"]*picto[^"]*templatestyle[^"]*)">(.+)<\/div>/si';
+
+    // Try div first (most common in legacy data)
     $all_matches = [];
     if (preg_match_all($pattern_div, $short_description, $div_matches, PREG_SET_ORDER)) {
         $all_matches = array_merge($all_matches, $div_matches);
     }
-    // For span wrappers: match the outermost span.picto.templatestyle
-    // by finding spans that are NOT nested inside another picto span
-    $pattern_span2 = '/<span\s+class="([^"]*picto[^"]*templatestyle[^"]*)">(.+?)(?=<\/span>\s*(?:<\/|$))/si';
-    // Actually simpler: just use the div pattern result. Most legacy data uses div.
-    // If span-wrapped, the existing pattern_div won't match, so add span fallback:
+
+    // Fallback: try span wrappers if no div matches found
     if (empty($all_matches)) {
-        // Fallback: try matching span wrappers by finding the closing </span> that
-        // is NOT preceded by another opening <span (i.e., the outermost one)
-        $pattern_span_outer = '/<span\s+class="([^"]*picto[^"]*templatestyle[^"]*)">(((?!<span\s+class="[^"]*picto[^"]*templatestyle).)*)<\/span>/si';
-        if (preg_match_all($pattern_span_outer, $short_description, $span_matches, PREG_SET_ORDER)) {
+        $pattern_span = '/<span\s+class="([^"]*picto[^"]*templatestyle[^"]*)">(.+)<\/span>/si';
+        if (preg_match_all($pattern_span, $short_description, $span_matches, PREG_SET_ORDER)) {
             $all_matches = array_merge($all_matches, $span_matches);
         }
     }
-    
-    $matches = $all_matches;
-    $pattern = $pattern_div; // kept for reference
 
-    if (empty($matches)) {
+    if (empty($all_matches)) {
         return '';
     }
 
-    foreach ($matches as $match) {
+    foreach ($all_matches as $match) {
         $classes = $match[1];
         $inner   = trim($match[2]);
 
@@ -158,7 +151,9 @@ function mrh_extract_legacy_badges($short_description) {
         $normalized = str_replace('fa-tachometer', 'fa-gauge-high', $normalized);
 
         // Remove legacy extra classes like "pukal", "shortfongc" that are not needed
-        $normalized = preg_replace('/\b(pukal|shortfongc)\b/', '', $normalized);
+        // but keep them as they may be used for styling
+        // $normalized = preg_replace('/\b(pukal|shortfongc)\b/', '', $normalized);
+
         // Clean up double spaces
         $normalized = preg_replace('/\s{2,}/', ' ', $normalized);
         $normalized = str_replace('" >', '">', $normalized);
@@ -186,7 +181,8 @@ function mrh_extract_legacy_badges($short_description) {
         }
 
         // Build the badge in the standard mrh structure
-        $badges[] = '<span class="mrh-type-badge mrh-badge-' . $badge_type . '" title="' . htmlspecialchars($title) . '">' . $normalized . '</span>';
+        // Use mrh-badge-picto-XXX to distinguish from structured badges
+        $badges[] = '<span class="mrh-type-badge mrh-badge-picto-' . $badge_type . '" title="' . htmlspecialchars($title) . '">' . $normalized . '</span>';
     }
 
     if (empty($badges)) return '';
@@ -201,12 +197,14 @@ function mrh_extract_legacy_badges($short_description) {
  * Merge structured badge HTML with legacy badge HTML.
  *
  * Combines both badge sources into a single picto templatestyle wrapper.
- * Avoids duplicates by checking if the legacy badge type (cup, auto, etc.)
- * is already present in the structured badges.
+ * Legacy badges from short_description are ALWAYS added alongside
+ * structured badges - they represent the original picto data and should
+ * be visible until the product is manually updated.
  *
  * @param string $struct_html  Badge HTML from buildBadgeHTML() (structured DB attrs)
  * @param string $legacy_html  Badge HTML from mrh_extract_legacy_badges() (short_description)
  * @return string Merged badge HTML or empty string
+ * @version 1.4.0 - Always merge legacy badges, never filter them out
  */
 function mrh_merge_badge_html($struct_html, $legacy_html) {
     // If both are empty, return empty
@@ -231,39 +229,11 @@ function mrh_merge_badge_html($struct_html, $legacy_html) {
     if (empty($legacy_inner)) return $struct_html;
     if (empty($struct_inner)) return $legacy_html;
     
-    // Check for duplicate badge types: extract mrh-badge-XXX classes from structured
-    $struct_types = [];
-    if (preg_match_all('/mrh-badge-(\w+)/', $struct_inner, $type_matches)) {
-        $struct_types = array_unique($type_matches[1]);
-    }
-    
-    // Filter legacy badges: only keep those whose type is NOT in structured
-    $filtered_legacy = '';
-    if (preg_match_all('/<span class="mrh-type-badge[^"]*"[^>]*>.*?<\/span>/si', $legacy_inner, $legacy_badges)) {
-        foreach ($legacy_badges[0] as $badge) {
-            // Extract badge type
-            $badge_type = '';
-            if (preg_match('/mrh-badge-(\w+)/', $badge, $bt)) {
-                $badge_type = $bt[1];
-            }
-            // Skip if this type already exists in structured badges
-            // Exception: 'cup' badges can have different counts, so always add
-            if ($badge_type !== 'cup' && in_array($badge_type, $struct_types)) {
-                continue;
-            }
-            // For cup badges: skip if structured already has cup
-            if ($badge_type === 'cup' && in_array('cup', $struct_types)) {
-                continue;
-            }
-            $filtered_legacy .= $badge;
-        }
-    }
-    
-    if (empty($filtered_legacy)) return $struct_html;
-    
-    // Combine: structured badges + filtered legacy badges in one wrapper
+    // v1.4.0: Always merge ALL legacy badges alongside structured badges.
+    // Legacy badges use mrh-badge-picto-XXX class to distinguish from structured mrh-badge-XXX.
+    // This ensures the original picto data from short_description is always visible.
     return '<span class="picto templatestyle"><span class="mrh-badge-bar">'
-        . $struct_inner . $filtered_legacy
+        . $struct_inner . $legacy_inner
         . '</span></span>';
 }
 
