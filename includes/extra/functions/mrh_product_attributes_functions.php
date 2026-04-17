@@ -73,9 +73,11 @@ function mrh_has_product_attributes($products_id, $language_id = 0) {
  * Extract legacy picto badges from products_short_description HTML.
  *
  * Parses <div/span class="picto templatestyle"> elements from the raw
- * short description. Skips elements with class "off" and placeholder
- * text "HIERDASICON". Returns cleaned badge HTML wrapped in the
- * standard mrh-badge-bar structure.
+ * short description. Filters by CONTENT, not by class "off":
+ * - Skip if text content is only "HIERDASICON" (placeholder)
+ * - Skip if content is empty / &nbsp; only (no icons)
+ * - KEEP if content has real FA icons (trophy, tachometer, etc.)
+ *   even when the wrapper has class "off"
  *
  * @param string $short_description Raw products_short_description HTML
  * @return string Badge HTML or empty string
@@ -90,40 +92,63 @@ function mrh_extract_legacy_badges($short_description) {
 
     $badges = [];
 
-    // Match <div|span class="...picto...templatestyle...">...content...</div|span>
-    // Uses a regex that handles both div and span, and captures class + inner HTML
-    $pattern = '/<(?:div|span)\s+class="([^"]*picto[^"]*templatestyle[^"]*)">(.+?)<\/(?:div|span)>/si';
+    // Match <div class="...picto...templatestyle...">...all content...</div>
+    // and  <span class="...picto...templatestyle...">...all content...</span>
+    // Two separate patterns because inner content contains nested spans
+    // which would break a single pattern with </(?:div|span)>
+    $pattern_div  = '/<div\s+class="([^"]*picto[^"]*templatestyle[^"]*)">(.+?)<\/div>/si';
+    $pattern_span = '/<span\s+class="([^"]*picto[^"]*templatestyle[^"]*)">(.+?)<\/span>\s*<\/span>/si';
+    
+    // Try div first (most common in legacy data), then span
+    $all_matches = [];
+    if (preg_match_all($pattern_div, $short_description, $div_matches, PREG_SET_ORDER)) {
+        $all_matches = array_merge($all_matches, $div_matches);
+    }
+    // For span wrappers: match the outermost span.picto.templatestyle
+    // by finding spans that are NOT nested inside another picto span
+    $pattern_span2 = '/<span\s+class="([^"]*picto[^"]*templatestyle[^"]*)">(.+?)(?=<\/span>\s*(?:<\/|$))/si';
+    // Actually simpler: just use the div pattern result. Most legacy data uses div.
+    // If span-wrapped, the existing pattern_div won't match, so add span fallback:
+    if (empty($all_matches)) {
+        // Fallback: try matching span wrappers by finding the closing </span> that
+        // is NOT preceded by another opening <span (i.e., the outermost one)
+        $pattern_span_outer = '/<span\s+class="([^"]*picto[^"]*templatestyle[^"]*)">(((?!<span\s+class="[^"]*picto[^"]*templatestyle).)*)<\/span>/si';
+        if (preg_match_all($pattern_span_outer, $short_description, $span_matches, PREG_SET_ORDER)) {
+            $all_matches = array_merge($all_matches, $span_matches);
+        }
+    }
+    
+    $matches = $all_matches;
+    $pattern = $pattern_div; // kept for reference
 
-    if (!preg_match_all($pattern, $short_description, $matches, PREG_SET_ORDER)) {
+    if (empty($matches)) {
         return '';
     }
 
     foreach ($matches as $match) {
         $classes = $match[1];
-        $inner   = $match[2];
+        $inner   = trim($match[2]);
 
-        // Skip elements with class "off"
-        if (preg_match('/\boff\b/', $classes)) {
-            continue;
-        }
-
-        // Skip placeholder text "HIERDASICON"
+        // Filter by CONTENT, not by class "off":
+        // 1. Skip placeholder text "HIERDASICON"
         $text_only = strip_tags($inner);
         $text_clean = trim(html_entity_decode($text_only, ENT_QUOTES, 'UTF-8'));
         if (stripos($text_clean, 'HIERDASICON') !== false) {
             continue;
         }
 
-        // Skip empty / &nbsp; only content
+        // 2. Skip empty / &nbsp; only content WITHOUT any icon spans
         $text_check = str_replace(['&nbsp;', ' ', "\t", "\n", "\r"], '', $text_clean);
         if (empty($text_check) && stripos($inner, '<span') === false) {
             continue;
         }
 
-        // The inner HTML contains FA icon spans – keep them as-is
-        // Normalize old FA4 classes to FA6/7 format:
-        //   "fa fa-fw fa-trophy" => "fa-solid fa-fw fa-trophy"
-        //   "fa fa-fw fa-tachometer" => "fa-solid fa-fw fa-gauge-high"
+        // 3. Must contain at least one FA icon span to be a valid badge
+        if (stripos($inner, 'fa-') === false) {
+            continue;
+        }
+
+        // The inner HTML contains FA icon spans - normalize FA4 to FA6/7:
         $normalized = $inner;
 
         // Replace legacy "fa " prefix with "fa-solid " (but not "fa-" which is already correct)
@@ -138,18 +163,17 @@ function mrh_extract_legacy_badges($short_description) {
         $normalized = preg_replace('/\s{2,}/', ' ', $normalized);
         $normalized = str_replace('" >', '">', $normalized);
 
-        // Wrap each icon in mrh-type-badge structure
-        // Extract title from the inner span
+        // Extract title from the first inner span for the wrapper
         $title = '';
         if (preg_match('/title="([^"]*)"/i', $normalized, $title_match)) {
             $title = $title_match[1];
         }
 
-        // Determine badge type from icon class
+        // Determine badge type from icon classes
         $badge_type = 'legacy';
         if (stripos($normalized, 'fa-trophy') !== false) {
             $badge_type = 'cup';
-        } elseif (stripos($normalized, 'fa-gauge-high') !== false || stripos($normalized, 'fa-tachometer') !== false) {
+        } elseif (stripos($normalized, 'fa-gauge-high') !== false) {
             $badge_type = 'auto';
         } elseif (stripos($normalized, 'fa-venus') !== false) {
             $badge_type = 'fem';
