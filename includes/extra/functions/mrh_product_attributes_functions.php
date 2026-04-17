@@ -173,4 +173,74 @@ function mrh_extract_legacy_badges($short_description) {
         . '</span></span>';
 }
 
+/**
+ * Merge structured badge HTML with legacy badge HTML.
+ *
+ * Combines both badge sources into a single picto templatestyle wrapper.
+ * Avoids duplicates by checking if the legacy badge type (cup, auto, etc.)
+ * is already present in the structured badges.
+ *
+ * @param string $struct_html  Badge HTML from buildBadgeHTML() (structured DB attrs)
+ * @param string $legacy_html  Badge HTML from mrh_extract_legacy_badges() (short_description)
+ * @return string Merged badge HTML or empty string
+ */
+function mrh_merge_badge_html($struct_html, $legacy_html) {
+    // If both are empty, return empty
+    if (empty($struct_html) && empty($legacy_html)) return '';
+    
+    // If only one exists, return it directly
+    if (empty($legacy_html)) return $struct_html;
+    if (empty($struct_html)) return $legacy_html;
+    
+    // Both exist: extract inner badges from both and merge
+    // Extract the inner content of <span class="mrh-badge-bar">...</span>
+    $struct_inner = '';
+    if (preg_match('/<span class="mrh-badge-bar"[^>]*>(.*)<\/span>/si', $struct_html, $m)) {
+        $struct_inner = $m[1];
+    }
+    $legacy_inner = '';
+    if (preg_match('/<span class="mrh-badge-bar"[^>]*>(.*)<\/span>/si', $legacy_html, $m)) {
+        $legacy_inner = $m[1];
+    }
+    
+    if (empty($struct_inner) && empty($legacy_inner)) return '';
+    if (empty($legacy_inner)) return $struct_html;
+    if (empty($struct_inner)) return $legacy_html;
+    
+    // Check for duplicate badge types: extract mrh-badge-XXX classes from structured
+    $struct_types = [];
+    if (preg_match_all('/mrh-badge-(\w+)/', $struct_inner, $type_matches)) {
+        $struct_types = array_unique($type_matches[1]);
+    }
+    
+    // Filter legacy badges: only keep those whose type is NOT in structured
+    $filtered_legacy = '';
+    if (preg_match_all('/<span class="mrh-type-badge[^"]*"[^>]*>.*?<\/span>/si', $legacy_inner, $legacy_badges)) {
+        foreach ($legacy_badges[0] as $badge) {
+            // Extract badge type
+            $badge_type = '';
+            if (preg_match('/mrh-badge-(\w+)/', $badge, $bt)) {
+                $badge_type = $bt[1];
+            }
+            // Skip if this type already exists in structured badges
+            // Exception: 'cup' badges can have different counts, so always add
+            if ($badge_type !== 'cup' && in_array($badge_type, $struct_types)) {
+                continue;
+            }
+            // For cup badges: skip if structured already has cup
+            if ($badge_type === 'cup' && in_array('cup', $struct_types)) {
+                continue;
+            }
+            $filtered_legacy .= $badge;
+        }
+    }
+    
+    if (empty($filtered_legacy)) return $struct_html;
+    
+    // Combine: structured badges + filtered legacy badges in one wrapper
+    return '<span class="picto templatestyle"><span class="mrh-badge-bar">'
+        . $struct_inner . $filtered_legacy
+        . '</span></span>';
+}
+
 endif; // TABLE_CONFIGURATION
