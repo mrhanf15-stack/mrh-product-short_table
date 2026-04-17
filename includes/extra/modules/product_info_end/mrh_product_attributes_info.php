@@ -14,9 +14,9 @@
  * - $mrh_attrs: Raw attributes array
  *
  * @package MRH_Product_Attributes
- * @version 1.3.0
+ * @version 1.6.0
  * @note Uses $info_smarty (not $smarty) because product_info.php renders via $info_smarty->fetch()
- * @fix 2026-04-17 Legacy-Badges IMMER zusaetzlich zu strukturierten Badges anzeigen
+ * @fix 2026-04-17 Legacy-Badges nur anzeigen wenn Typ nicht bereits strukturiert vorhanden
  */
 
 if (!defined('TABLE_CONFIGURATION')) { return; }
@@ -41,10 +41,11 @@ if (class_exists('MrhProductAttributes') && isset($product->data['products_id'])
         $mrh_pa_attrs_data = $mrh_pa_attrs;
     }
     
-    // 2. Legacy badges from short_description (ALWAYS extract)
+    // 2. Legacy badges from short_description (extract, but exclude types already in structured)
     $mrh_pa_legacy_badges = '';
     if (function_exists('mrh_extract_legacy_badges') && isset($product->data['products_short_description'])) {
-        $mrh_pa_legacy_badges = mrh_extract_legacy_badges($product->data['products_short_description']);
+        $mrh_pa_exclude = function_exists('mrh_detect_struct_badge_types') ? mrh_detect_struct_badge_types($mrh_pa_struct_badges) : [];
+        $mrh_pa_legacy_badges = mrh_extract_legacy_badges($product->data['products_short_description'], $mrh_pa_exclude);
     }
     
     // 3. Merge: structured first, then legacy
