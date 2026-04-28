@@ -2,8 +2,13 @@
 /**
  * MRH Product Attributes - categories.php Product Edit Hook
  * Autoinclude: ~/admin/includes/extra/modules/new_product/
- * 
+ *
  * Injects the "Eigenschaften (MRH)" tab into the product edit form.
+ *
+ * Features v1.5.0:
+ * - Titel-Feld editierbar in Icon-Liste (Inline-Input statt statischer Text)
+ * - Leerer Titel = kein Text neben Icon im Frontend
+ * - Icon-Name nicht mehr als Default-Titel beim Hinzufuegen
  *
  * Features v1.4.0:
  * - 4 Preset buttons (Feminisiert | Autoflowering | Regulaer | Auto Regulaer)
@@ -59,7 +64,6 @@ while ($mrh_pa_lang_row = xtc_db_fetch_array($mrh_pa_lang_q)) {
 $mrh_pa_fields = [
     'gender'         => ['label' => defined('MRH_PA_FIELD_GENDER') ? MRH_PA_FIELD_GENDER : 'Geschlecht', 'type' => 'select', 'priority' => false],
     'flowering_type' => ['label' => defined('MRH_PA_FIELD_FLOWERING_TYPE') ? MRH_PA_FIELD_FLOWERING_TYPE : 'Bluetentyp', 'type' => 'select', 'priority' => false],
-    'growing'        => ['label' => defined('MRH_PA_FIELD_GROWING') ? MRH_PA_FIELD_GROWING : 'Anbau', 'type' => 'select', 'priority' => false],
     'type'           => ['label' => defined('MRH_PA_FIELD_TYPE') ? MRH_PA_FIELD_TYPE : 'Sorte', 'type' => 'select', 'priority' => 'prio'],
     'thc'            => ['label' => defined('MRH_PA_FIELD_THC') ? MRH_PA_FIELD_THC : 'THC', 'type' => 'text', 'priority' => 'prio'],
     'cbd'            => ['label' => defined('MRH_PA_FIELD_CBD') ? MRH_PA_FIELD_CBD : 'CBD', 'type' => 'text', 'priority' => 'prio'],
@@ -73,6 +77,7 @@ $mrh_pa_fields = [
     'climate'        => ['label' => defined('MRH_PA_FIELD_CLIMATE') ? MRH_PA_FIELD_CLIMATE : 'Klima', 'type' => 'text', 'priority' => false],
     'effect'         => ['label' => defined('MRH_PA_FIELD_EFFECT') ? MRH_PA_FIELD_EFFECT : 'Wirkung', 'type' => 'text', 'priority' => false],
     'taste'          => ['label' => defined('MRH_PA_FIELD_TASTE') ? MRH_PA_FIELD_TASTE : 'Geschmack', 'type' => 'text', 'priority' => false],
+    'growing'        => ['label' => defined('MRH_PA_FIELD_GROWING') ? MRH_PA_FIELD_GROWING : 'Anbau', 'type' => 'select', 'priority' => false],
 ];
 
 // Apply saved field order (if exists for this product)
@@ -81,16 +86,6 @@ if ($mrh_pa_products_id > 0 && class_exists('MrhProductAttributes')) {
     if ($mrh_pa_saved_order_json) {
         $mrh_pa_saved_order = json_decode($mrh_pa_saved_order_json, true);
         if (is_array($mrh_pa_saved_order) && !empty($mrh_pa_saved_order)) {
-            // Enforce: growing must always come before type in saved order
-            $grow_pos = array_search('growing', $mrh_pa_saved_order);
-            $type_pos = array_search('type', $mrh_pa_saved_order);
-            if ($grow_pos !== false && $type_pos !== false && $grow_pos > $type_pos) {
-                // Remove growing from old position and insert before type
-                array_splice($mrh_pa_saved_order, $grow_pos, 1);
-                $type_pos = array_search('type', $mrh_pa_saved_order);
-                array_splice($mrh_pa_saved_order, $type_pos, 0, ['growing']);
-            }
-            
             $mrh_pa_fields_ordered = [];
             // First: add fields in saved order
             foreach ($mrh_pa_saved_order as $key) {
@@ -174,17 +169,17 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
 <!-- MRH Product Attributes Tab v1.5.1 -->
 <style>
 #mrh-pa-container { margin: 10px 0; padding: 0; }
-#mrh-pa-container .mrh-pa-header { 
-    background: #2c3e50; color: #fff; padding: 12px 20px; 
+#mrh-pa-container .mrh-pa-header {
+    background: #2c3e50; color: #fff; padding: 12px 20px;
     border-radius: 6px 6px 0 0; display: flex; align-items: center; justify-content: space-between;
 }
 #mrh-pa-container .mrh-pa-header h3 { margin: 0; font-size: 16px; font-weight: 600; }
-#mrh-pa-container .mrh-pa-body { 
-    border: 1px solid #ddd; border-top: none; border-radius: 0 0 6px 6px; 
-    padding: 15px; background: #fafafa; 
+#mrh-pa-container .mrh-pa-body {
+    border: 1px solid #ddd; border-top: none; border-radius: 0 0 6px 6px;
+    padding: 15px; background: #fafafa;
 }
-#mrh-pa-container .mrh-pa-preset-tabs { 
-    display: flex; gap: 0; margin-bottom: 15px; 
+#mrh-pa-container .mrh-pa-preset-tabs {
+    display: flex; gap: 0; margin-bottom: 15px;
     border: 2px solid #2c3e50; border-radius: 6px; overflow: hidden;
 }
 #mrh-pa-container .mrh-pa-preset-tab {
@@ -302,8 +297,24 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
 #mrh-pa-container .mrh-pa-icon-item .icon-preview-svg { width: 18px; height: 18px; vertical-align: middle; }
 #mrh-pa-container .mrh-pa-icon-item .icon-title { font-weight: 500; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #mrh-pa-container .mrh-pa-icon-item .icon-edit-color {
-    width: 24px; height: 24px; padding: 0; border: 1px solid #ccc; border-radius: 50%; 
+    width: 24px; height: 24px; padding: 0; border: 1px solid #ccc; border-radius: 50%;
     cursor: pointer; vertical-align: middle;
+}
+#mrh-pa-container .mrh-pa-icon-item .icon-edit-bgcolor {
+    width: 24px; height: 24px; padding: 0; border: 1px solid #ccc; border-radius: 4px;
+    cursor: pointer; vertical-align: middle;
+}
+#mrh-pa-container .mrh-pa-icon-item .icon-edit-bordercolor {
+    width: 24px; height: 24px; padding: 0; border: 1px solid #ccc; border-radius: 4px;
+    cursor: pointer; vertical-align: middle;
+}
+#mrh-pa-container .mrh-pa-icon-item .icon-color-label {
+    font-size: 9px; color: #888; white-space: nowrap;
+}
+#mrh-pa-container .mrh-pa-icon-item .icon-badge-preview {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 3px 6px; border-radius: 12px; border: 1px solid #ddd;
+    font-size: 11px; min-width: 28px; min-height: 24px;
 }
 #mrh-pa-container .mrh-pa-icon-item .icon-edit-size {
     width: 50px; padding: 2px 4px; border: 1px solid #ccc; border-radius: 3px; font-size: 11px;
@@ -384,6 +395,12 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
 #mrh-pa-container .mrh-pa-icon-add-controls input[type="color"] {
     width: 32px; height: 28px; padding: 0; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;
 }
+#mrh-pa-container .mrh-pa-icon-add-controls .add-color-group {
+    display: inline-flex; align-items: center; gap: 3px;
+}
+#mrh-pa-container .mrh-pa-icon-add-controls .add-color-label {
+    font-size: 10px; color: #666; white-space: nowrap;
+}
 #mrh-pa-container .mrh-pa-icon-add-controls input[type="number"] {
     width: 55px; padding: 5px 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; text-align: center;
 }
@@ -408,7 +425,7 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
         <h3><span class="fa fa-leaf"></span> <?php echo defined('MRH_PA_PRODUCT_TAB') ? MRH_PA_PRODUCT_TAB : 'Eigenschaften (MRH)'; ?></h3>
         <div class="mrh-pa-status">
             <?php if (!empty($mrh_pa_all_attrs)): ?>
-                <?php 
+                <?php
                     $first_attr = reset($mrh_pa_all_attrs);
                     $filled = (int)($first_attr['fields_filled'] ?? 0);
                     $source = $first_attr['data_source'] ?? 'manual';
@@ -420,19 +437,12 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
             <?php endif; ?>
         </div>
     </div>
-    
+
     <div class="mrh-pa-body">
-        <!-- Badge-Konfiguration Hinweis -->
-        <div style="background:#e8f5e9; border:1px solid #c8e6c9; border-radius:6px; padding:10px 14px; margin-bottom:12px; font-size:12px;">
-            <span class="fa fa-info-circle" style="color:#27ae60;"></span>
-            <strong>Badges (Geschlecht, Bluetentyp)</strong> werden automatisch aus den Feldern generiert.
-            Die Badge-Icons koennen <strong>global</strong> bearbeitet werden unter:
-            <a href="mrh_product_attributes.php?tab=config" style="color:#27ae60; font-weight:600;">Hilfsprogramme &rarr; MRH Produkteigenschaften &rarr; Einstellungen &rarr; Badge-Konfiguration</a>
-        </div>
         <?php if ($mrh_pa_products_id == 0): ?>
             <p><em>Bitte speichern Sie das Produkt zuerst, bevor Sie Eigenschaften hinzufuegen.</em></p>
         <?php else: ?>
-        
+
         <!-- Seed/Non-Seed Toggle -->
         <div class="mrh-pa-seed-toggle">
             <label><strong><?php echo defined('MRH_PA_PRODUCT_IS_SEED') ? MRH_PA_PRODUCT_IS_SEED : 'Ist Saatgut-Produkt'; ?>:</strong></label>
@@ -445,7 +455,7 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
                 </option>
             </select>
         </div>
-        
+
         <!-- Preset Tabs -->
         <div class="mrh-pa-preset-tabs">
             <div class="mrh-pa-preset-tab <?php echo $mrh_pa_detected_preset === 'feminized' ? 'active' : ''; ?>" data-preset="feminized" onclick="mrhPaApplyPreset('feminized')">
@@ -461,29 +471,29 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
                 <span class="fa fa-bolt"></span><img class="preset-svg" src="/<?php echo $mrh_pa_badge_base; ?>male.svg" alt="M"> <?php echo defined('MRH_PA_PRESET_AUTO_REGULAR') ? MRH_PA_PRESET_AUTO_REGULAR : 'Auto Regulaer'; ?>
             </div>
         </div>
-        
+
         <!-- Language Tabs -->
         <div class="mrh-pa-lang-tabs">
             <?php foreach ($mrh_pa_languages as $idx => $lang): ?>
-                <div class="mrh-pa-lang-tab <?php echo $idx === 0 ? 'active' : ''; ?>" 
+                <div class="mrh-pa-lang-tab <?php echo $idx === 0 ? 'active' : ''; ?>"
                      data-lang-id="<?php echo $lang['languages_id']; ?>"
                      onclick="mrhPaSwitchLang(<?php echo $lang['languages_id']; ?>, this)">
                     <?php echo $lang['name']; ?>
                 </div>
             <?php endforeach; ?>
         </div>
-        
+
         <!-- Language Panels -->
         <?php foreach ($mrh_pa_languages as $idx => $lang): ?>
-            <?php 
+            <?php
                 $lid = $lang['languages_id'];
                 $attrs = $mrh_pa_all_attrs[$lid] ?? [];
             ?>
-            <div class="mrh-pa-lang-panel <?php echo $idx === 0 ? 'active' : ''; ?>" 
+            <div class="mrh-pa-lang-panel <?php echo $idx === 0 ? 'active' : ''; ?>"
                  id="mrh-pa-lang-<?php echo $lid; ?>">
-                
+
                 <?php foreach ($mrh_pa_fields as $field_key => $field_def): ?>
-                    <?php 
+                    <?php
                         $row_class = '';
                         if ($field_def['priority'] === 'prio') $row_class = 'priority';
                         elseif ($field_def['priority'] === 'alt') $row_class = 'alt-priority';
@@ -500,7 +510,7 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
                         </div>
                         <div class="mrh-pa-field-input">
                             <?php if ($field_def['type'] === 'select' && isset($mrh_pa_select_options[$field_key])): ?>
-                                <select name="mrh_pa[<?php echo $lid; ?>][<?php echo $field_key; ?>]" 
+                                <select name="mrh_pa[<?php echo $lid; ?>][<?php echo $field_key; ?>]"
                                         id="mrh_pa_<?php echo $lid; ?>_<?php echo $field_key; ?>"
                                         class="mrh-pa-input" data-field="<?php echo $field_key; ?>">
                                     <?php foreach ($mrh_pa_select_options[$field_key] as $opt_val => $opt_label): ?>
@@ -511,7 +521,7 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
                                     <?php endforeach; ?>
                                 </select>
                             <?php else: ?>
-                                <input type="text" 
+                                <input type="text"
                                        name="mrh_pa[<?php echo $lid; ?>][<?php echo $field_key; ?>]"
                                        id="mrh_pa_<?php echo $lid; ?>_<?php echo $field_key; ?>"
                                        class="mrh-pa-input" data-field="<?php echo $field_key; ?>"
@@ -522,10 +532,10 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
                         <button type="button" class="field-remove-btn" onclick="this.closest('.mrh-pa-field-row').style.display='none'; this.closest('.mrh-pa-field-row').querySelectorAll('input,select').forEach(function(e){e.disabled=true;})" title="Feld ausblenden">&times;</button>
                     </div>
                 <?php endforeach; ?>
-                
+
                 <!-- Custom Fields -->
                 <div class="mrh-pa-custom-fields" id="mrh-pa-custom-<?php echo $lid; ?>">
-                    <?php 
+                    <?php
                     $custom = [];
                     if (!empty($attrs['custom_fields'])) {
                         $custom = json_decode($attrs['custom_fields'], true) ?: [];
@@ -552,7 +562,7 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
                         'effekt', 'eigenschaften', 'aroma',
                     ]);
                     $mrh_pa_std_labels = array_unique($mrh_pa_std_labels);
-                    
+
                     // Filter: skip custom fields that duplicate standard fields
                     $custom_filtered = [];
                     $ci_new = 0;
@@ -569,49 +579,37 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
                         <div class="mrh-pa-field-row mrh-pa-custom-row" draggable="true">
                             <span class="mrh-pa-field-drag" title="Drag zum Sortieren">&#9776;</span>
                             <div class="mrh-pa-field-input" style="width:180px;flex:none;">
-                                <input type="text" 
+                                <input type="text"
                                        name="mrh_pa[<?php echo $lid; ?>][custom][<?php echo $ci; ?>][label]"
                                        value="<?php echo htmlspecialchars($cf['label'] ?? ''); ?>"
                                        placeholder="Feldname">
                             </div>
                             <div class="mrh-pa-field-input">
-                                <input type="text" 
+                                <input type="text"
                                        name="mrh_pa[<?php echo $lid; ?>][custom][<?php echo $ci; ?>][value]"
                                        value="<?php echo htmlspecialchars($cf['value'] ?? ''); ?>"
                                        placeholder="Wert">
                             </div>
-                            <button type="button" class="mrh-pa-btn mrh-pa-btn-secondary" 
-                                    onclick="this.closest('.mrh-pa-custom-row').remove()" 
+                            <button type="button" class="mrh-pa-btn mrh-pa-btn-secondary"
+                                    onclick="this.closest('.mrh-pa-custom-row').remove()"
                                     title="Entfernen">&times;</button>
                         </div>
                     <?php endforeach; ?>
                 </div>
-                
-                <button type="button" class="mrh-pa-btn mrh-pa-btn-add" 
+
+                <button type="button" class="mrh-pa-btn mrh-pa-btn-add"
                         onclick="mrhPaAddCustomField(<?php echo $lid; ?>)">
                     + <?php echo defined('MRH_PA_BUTTON_ADD_FIELD') ? MRH_PA_BUTTON_ADD_FIELD : 'Feld hinzufuegen'; ?>
                 </button>
             </div>
         <?php endforeach; ?>
-        
+
         <!-- ============================================================ -->
         <!-- ICON EDITOR v1.3.0 with DnD, SVG, numeric size              -->
         <!-- ============================================================ -->
         <div class="mrh-pa-icon-section">
             <h4><span class="fa fa-paint-brush"></span> Picto-Icons (Badges) — Editor</h4>
-            
-            <!-- Auto-Badge Vorschau (Geschlecht + Bluetentyp) -->
-            <div id="mrh-pa-auto-badges-preview" style="background:#f0f4f8; border:1px solid #d1d9e6; border-radius:8px; padding:12px 16px; margin-bottom:14px;">
-                <div style="font-size:12px; font-weight:700; color:#2c3e50; margin-bottom:8px;">
-                    <span class="fa fa-shield-halved" style="color:#27ae60;"></span>
-                    Automatische Badges (werden aus Geschlecht &amp; Bluetentyp generiert):
-                    <a href="mrh_product_attributes.php?tab=config" style="font-size:11px; color:#27ae60; margin-left:8px;">Global bearbeiten &rarr;</a>
-                </div>
-                <div id="mrh-pa-auto-badges-bar" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-                    <span style="color:#999; font-size:12px;" id="mrh-pa-auto-badges-empty">Bitte Geschlecht &amp; Bluetentyp waehlen, um die Vorschau zu sehen.</span>
-                </div>
-            </div>
-            
+
             <!-- Current icons list (editable + draggable) -->
             <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:6px;">
                 Aktuelle Icons (Drag &amp; Drop zum Sortieren, Farbe/Groesse klicken):
@@ -619,7 +617,7 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
             <div class="mrh-pa-icon-list" id="mrh-pa-icon-list">
                 <span style="color:#999;font-size:12px;" id="mrh-pa-icon-empty">Keine Icons. Waehlen Sie aus der Bibliothek unten.</span>
             </div>
-            
+
             <!-- Quick-Pick: Vordefinierte Cannabis-Icons (FA7, kein Text default, optionale Texteingabe) -->
             <div class="mrh-pa-quickpick">
                 <div class="mrh-pa-quickpick-title"><span class="fa-solid fa-star"></span> Schnellauswahl — Cannabis-Badges (Klick zum Hinzufuegen/Entfernen)</div>
@@ -658,7 +656,7 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
                     echo '<input type="text" class="qp-title-input" placeholder="Text (optional)" value="" onchange="mrhPaQpEditTitle(this)">';
                     echo '<input type="number" class="qp-size-input" value="16" min="10" max="48" onchange="mrhPaQpEditSize(this)"> px';
                     echo '</span></span>';
-                    
+
                     foreach ($mrh_pa_qp_badges as $qp) {
                         $faPrefix = $qp['style'] === 'brands' ? 'fa-brands' : ($qp['style'] === 'regular' ? 'fa-regular' : 'fa-solid');
                         echo '<span class="mrh-pa-quickpick-btn" data-icon="' . $qp['icon'] . '" data-color="' . $qp['color'] . '" data-title="' . $qp['title'] . '" data-type="fa" data-style="' . $qp['style'] . '" onclick="mrhPaQuickPick(this)">';
@@ -672,7 +670,7 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
                     ?>
                 </div>
             </div>
-            
+
             <!-- Icon Library with Search + Style Switcher -->
             <div class="mrh-pa-icon-library">
                 <div class="mrh-pa-icon-library-header">
@@ -689,8 +687,12 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
                 <div class="mrh-pa-icon-add-controls" id="mrh-pa-icon-add-controls">
                     <label>Titel:</label>
                     <input type="text" id="mrh-pa-add-title" placeholder="Anzeigename">
-                    <label>Farbe:</label>
-                    <input type="color" id="mrh-pa-add-color" value="#333333">
+                    <span class="add-color-group"><span class="add-color-label">Icon:</span>
+                    <input type="color" id="mrh-pa-add-color" value="#333333"></span>
+                    <span class="add-color-group"><span class="add-color-label">BG:</span>
+                    <input type="color" id="mrh-pa-add-bgcolor" value="#f1f5f9" title="Hintergrundfarbe"></span>
+                    <span class="add-color-group"><span class="add-color-label">Rand:</span>
+                    <input type="color" id="mrh-pa-add-bordercolor" value="#dddddd" title="Randfarbe"></span>
                     <label>Groesse:</label>
                     <input type="number" id="mrh-pa-add-size" value="16" min="10" max="48" style="width:55px"> px
                     <span style="font-size:11px;color:#666;">Klicke ein Icon unten zum Hinzufuegen</span>
@@ -699,11 +701,11 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
                     <!-- Icons werden per JS geladen -->
                 </div>
             </div>
-            
+
             <!-- Hidden input to store pictos JSON -->
             <input type="hidden" name="mrh_pa[pictos]" id="mrh-pa-pictos-json" value="<?php echo htmlspecialchars(json_encode($mrh_pa_pictos)); ?>">
         </div>
-        
+
         <!-- ============================================================ -->
         <!-- CANNABIS CUP TROPHIES (max 3 + number)                       -->
         <!-- ============================================================ -->
@@ -711,14 +713,14 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
             <h4><span class="fa fa-trophy" style="color:#f39c12"></span> Cannabis Cup Auszeichnungen</h4>
             <div class="mrh-pa-cups-row">
                 <label style="font-size:13px;font-weight:600;">Anzahl Pokale:</label>
-                <input type="number" name="mrh_pa[cannabis_cups]" id="mrh-pa-cups-input" 
+                <input type="number" name="mrh_pa[cannabis_cups]" id="mrh-pa-cups-input"
                        min="0" max="99" value="<?php echo $mrh_pa_cups; ?>"
                        onchange="mrhPaUpdateCupsPreview()" oninput="mrhPaUpdateCupsPreview()">
                 <div class="mrh-pa-cups-preview" id="mrh-pa-cups-preview"></div>
             </div>
             <div style="font-size:11px;color:#999;margin-top:6px;">1-3 = Pokale einzeln, ab 4 = 3 Pokale + Zahl</div>
         </div>
-        
+
         <!-- Action Buttons -->
         <div class="mrh-pa-actions">
             <button type="button" class="mrh-pa-btn-save" id="mrh-pa-save-btn" onclick="mrhPaSaveAll()">
@@ -730,10 +732,10 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
             </button>
             <div id="mrh-pa-ai-status" style="display:none;font-size:12px;color:#666;align-self:center;"></div>
         </div>
-        
+
         <!-- Hidden field for product ID -->
         <input type="hidden" name="mrh_pa[products_id]" value="<?php echo $mrh_pa_products_id; ?>">
-        
+
         <?php endif; ?>
     </div>
 </div>
@@ -763,123 +765,6 @@ var mrhPaCurrentStyle = 'solid'; // Default style filter
 
 var mrhPaBadgeBase = '<?php echo $mrh_pa_badge_base; ?>';
 
-// Badge configuration from server (global config)
-var mrhPaBadgeConfigs = <?php
-    $badge_configs_js = [];
-    if (class_exists('MrhProductAttributes')) {
-        foreach (array_keys(MrhProductAttributes::DEFAULT_BADGE_CONFIG) as $bk) {
-            $badge_configs_js[$bk] = MrhProductAttributes::getBadgeConfig($bk);
-        }
-    }
-    echo json_encode($badge_configs_js);
-?>;
-
-// Badge labels for preview
-var mrhPaBadgeLabels = {
-    'gender_feminized':       '<?php echo defined("MRH_PA_GENDER_FEMINIZED") ? MRH_PA_GENDER_FEMINIZED : "Feminisiert"; ?>',
-    'gender_regular':         '<?php echo defined("MRH_PA_GENDER_REGULAR") ? MRH_PA_GENDER_REGULAR : "Regulaer"; ?>',
-    'flowering_autoflower':   '<?php echo defined("MRH_PA_FLOWERING_AUTOFLOWER") ? MRH_PA_FLOWERING_AUTOFLOWER : "Autoflowering"; ?>',
-    'flowering_photoperiod':  '<?php echo defined("MRH_PA_FLOWERING_PHOTOPERIOD") ? MRH_PA_FLOWERING_PHOTOPERIOD : "Photoperiodisch"; ?>'
-};
-
-// Badge CSS classes for each type
-var mrhPaBadgeCssMap = {
-    'gender_feminized':       'mrh-badge-fem',
-    'gender_regular':         'mrh-badge-reg',
-    'flowering_autoflower':   'mrh-badge-auto',
-    'flowering_photoperiod':  'mrh-badge-photo'
-};
-
-function mrhPaUpdateAutoBadges() {
-    var bar = document.getElementById('mrh-pa-auto-badges-bar');
-    if (!bar) return;
-    
-    // Try active panel first, then any panel
-    var panel = document.querySelector('.mrh-pa-lang-panel.active') || document.querySelector('.mrh-pa-lang-panel');
-    if (!panel) return;
-    var genderSel = panel.querySelector('select[data-field="gender"]');
-    var flowerSel = panel.querySelector('select[data-field="flowering_type"]');
-    var gender = genderSel ? genderSel.value : '';
-    var flower = flowerSel ? flowerSel.value : '';
-    
-    bar.innerHTML = '';
-    var badges = [];
-    
-    // Gender badge
-    if (gender === 'feminized') badges.push('gender_feminized');
-    else if (gender === 'regular') badges.push('gender_regular');
-    
-    // Flowering type badge
-    if (flower === 'autoflower') badges.push('flowering_autoflower');
-    else if (flower === 'photoperiod') badges.push('flowering_photoperiod');
-    
-    if (badges.length === 0) {
-        bar.innerHTML = '<span style="color:#999; font-size:12px;">Bitte Geschlecht &amp; Bluetentyp waehlen, um die Vorschau zu sehen.</span>';
-        return;
-    }
-    
-    for (var i = 0; i < badges.length; i++) {
-        var key = badges[i];
-        var cfg = mrhPaBadgeConfigs[key] || {};
-        var label = mrhPaBadgeLabels[key] || key;
-        var cssClass = mrhPaBadgeCssMap[key] || '';
-        var isTextOnly = cfg.text_only || false;
-        var showText = cfg.show_text || false;
-        var isSvg = cfg.is_svg || false;
-        var icon = cfg.icon || '';
-        var color = cfg.color || '';
-        
-        var span = document.createElement('span');
-        span.className = 'mrh-type-badge ' + cssClass;
-        if (isTextOnly) span.className += ' mrh-badge-textonly';
-        span.style.cssText = 'display:inline-flex; align-items:center; gap:4px; padding:4px 10px; border-radius:20px; font-size:13px; font-weight:600; border:1px solid rgba(0,0,0,0.1);';
-        
-        if (!isTextOnly && icon) {
-            if (isSvg) {
-                var img = document.createElement('img');
-                img.src = '/' + icon;
-                img.style.cssText = 'width:16px; height:16px; vertical-align:middle;';
-                span.appendChild(img);
-            } else {
-                var ic = document.createElement('i');
-                var faPrefix = (cfg.style === 'brands') ? 'fa-brands' : 'fa-solid';
-                ic.className = faPrefix + ' ' + icon;
-                if (color) ic.style.color = color;
-                ic.style.fontSize = '14px';
-                span.appendChild(ic);
-            }
-            // Always show label for preview (even if show_text is off, show it dimmed)
-            var txt = document.createElement('span');
-            txt.textContent = label;
-            txt.style.cssText = 'font-size:11px; font-weight:600;' + (showText ? '' : ' opacity:0.5; font-style:italic;');
-            txt.title = showText ? 'Text wird im Frontend angezeigt' : 'Text im Frontend ausgeblendet (nur Icon)';
-            span.appendChild(txt);
-        } else if (isTextOnly) {
-            var txt = document.createElement('span');
-            txt.className = 'mrh-badge-label';
-            txt.textContent = label;
-            txt.style.cssText = 'font-size:12px; font-weight:600;';
-            span.appendChild(txt);
-        }
-        
-        bar.appendChild(span);
-    }
-}
-
-// Bind change listeners for gender and flowering_type selects
-document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(function() {
-        var allPanels = document.querySelectorAll('.mrh-pa-lang-panel');
-        allPanels.forEach(function(panel) {
-            var gSel = panel.querySelector('select[data-field="gender"]');
-            var fSel = panel.querySelector('select[data-field="flowering_type"]');
-            if (gSel) gSel.addEventListener('change', function() { mrhPaUpdateAutoBadges(); mrhPaAutoDetectPreset(); });
-            if (fSel) fSel.addEventListener('change', function() { mrhPaUpdateAutoBadges(); mrhPaAutoDetectPreset(); });
-        });
-        mrhPaUpdateAutoBadges();
-    }, 100);
-});
-
 // ============================================================
 // PICTOS / ICON EDITOR v1.3.0
 // ============================================================
@@ -897,11 +782,11 @@ function mrhPaRenderIcons() {
     var list = document.getElementById('mrh-pa-icon-list');
     if (!list) return;
     list.innerHTML = '';
-    
+
     if (mrhPaCurrentPictos.length === 0) {
         list.innerHTML = '<span style="color:#999;font-size:12px;" id="mrh-pa-icon-empty">Keine Icons. Waehlen Sie aus der Bibliothek unten.</span>';
     }
-    
+
     for (var i = 0; i < mrhPaCurrentPictos.length; i++) {
         var p = mrhPaCurrentPictos[i];
         var iconVal = (p.icon || '').replace(/^fa\s+/, '');
@@ -910,7 +795,7 @@ function mrhPaRenderIcons() {
         item.className = 'mrh-pa-icon-item';
         item.setAttribute('data-idx', i);
         item.setAttribute('draggable', 'true');
-        
+
         var previewHtml;
         if (mrhPaIsSvg(iconVal)) {
             previewHtml = '<img class="icon-preview-svg" src="' + mrhPaEsc(mrhPaSvgUrl(iconVal)) + '" style="width:' + sizeNum + 'px;height:' + sizeNum + 'px">';
@@ -919,27 +804,34 @@ function mrhPaRenderIcons() {
             var faPrefix = faStyle === 'brands' ? 'fa-brands' : (faStyle === 'regular' ? 'fa-regular' : 'fa-solid');
             previewHtml = '<span class="icon-preview ' + faPrefix + ' ' + mrhPaEsc(iconVal) + '" style="color:' + mrhPaEsc(p.color || '#333') + ';font-size:' + sizeNum + 'px"></span>';
         }
-        
-        var colorHtml = mrhPaIsSvg(iconVal) ? '' : '<input type="color" class="icon-edit-color" value="' + mrhPaEsc(p.color || '#333333') + '" onchange="mrhPaEditIconColor(' + i + ', this.value)" title="Icon-Farbe">';
-        var bgColor = p.bgcolor || '#ffffff';
-        var borderColor = p.bordercolor || '#dddddd';
-        
-        item.innerHTML = 
+
+        var colorHtml = mrhPaIsSvg(iconVal) ? '' : '<input type="color" class="icon-edit-color" value="' + mrhPaEsc(p.color || '#333333') + '" onchange="mrhPaEditIconColor(' + i + ', this.value)" title="Icon-Farbe aendern">';
+
+        var bgColor = p.bgcolor || '#f1f5f9';
+        var bdColor = p.bordercolor || '#dddddd';
+        var bgColorHtml = '<span class="icon-color-label">BG:</span>' +
+            '<input type="color" class="icon-edit-bgcolor" value="' + mrhPaEsc(bgColor) + '" onchange="mrhPaEditIconBgColor(' + i + ', this.value)" title="Hintergrundfarbe">';
+        var bdColorHtml = '<span class="icon-color-label">Rand:</span>' +
+            '<input type="color" class="icon-edit-bordercolor" value="' + mrhPaEsc(bdColor) + '" onchange="mrhPaEditIconBorderColor(' + i + ', this.value)" title="Randfarbe">';
+
+        // Live badge preview
+        var badgePreviewStyle = 'background:' + mrhPaEsc(bgColor) + ';border-color:' + mrhPaEsc(bdColor) + ';';
+        var badgePreviewHtml = '<span class="icon-badge-preview" style="' + badgePreviewStyle + '">' + previewHtml + '</span>';
+
+        item.innerHTML =
             '<span class="drag-handle" title="Ziehen zum Sortieren">&#9776;</span>' +
-            '<span class="icon-badge-preview" style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;background:' + mrhPaEsc(bgColor) + ';border:1.5px solid ' + mrhPaEsc(borderColor) + ';">' + previewHtml + '</span>' +
-            '<input type="text" class="icon-edit-title" value="' + mrhPaEsc(p.title || '') + '" placeholder="Text (leer=nur Icon)" onchange="mrhPaEditIconTitle(' + i + ', this.value)" title="Anzeige-Text" style="width:100px;font-size:11px;padding:2px 4px;border:1px solid #ccc;border-radius:3px;">' +
-            colorHtml +
-            '<input type="color" class="icon-edit-bgcolor" value="' + mrhPaEsc(bgColor) + '" onchange="mrhPaEditIconBg(' + i + ', this.value)" title="Hintergrund">' +
-            '<input type="color" class="icon-edit-border" value="' + mrhPaEsc(borderColor) + '" onchange="mrhPaEditIconBorder(' + i + ', this.value)" title="Rand-Farbe">' +
+            badgePreviewHtml +
+            '<input type="text" class="icon-edit-title" value="' + mrhPaEsc(p.title || '') + '" placeholder="' + mrhPaEsc(iconVal.replace('fa-','').replace(/-/g,' ')) + '" onchange="mrhPaEditIconTitle(' + i + ', this.value)" title="Anzeigename (leer = kein Text)" style="width:90px;font-size:11px;padding:2px 4px;border:1px solid #ccc;border-radius:3px;">' +
+            colorHtml + bgColorHtml + bdColorHtml +
             '<input type="number" class="icon-edit-size" value="' + sizeNum + '" min="10" max="48" onchange="mrhPaEditIconSize(' + i + ', this.value)" title="Groesse (px)"> px' +
             '<span class="icon-remove" onclick="mrhPaRemoveIcon(' + i + ')" title="Entfernen">&times;</span>';
         list.appendChild(item);
     }
-    
+
     // Update hidden JSON field
     var jsonField = document.getElementById('mrh-pa-pictos-json');
     if (jsonField) jsonField.value = JSON.stringify(mrhPaCurrentPictos);
-    
+
     mrhPaUpdateLibrarySelection();
     mrhPaUpdateQuickPick();
     mrhPaInitDragDrop();
@@ -971,33 +863,33 @@ function mrhPaEditIconSize(idx, size) {
     }
 }
 
+function mrhPaEditIconBgColor(idx, color) {
+    if (mrhPaCurrentPictos[idx]) {
+        mrhPaCurrentPictos[idx].bgcolor = color;
+        var item = document.querySelector('.mrh-pa-icon-item[data-idx="' + idx + '"]');
+        if (item) {
+            var badge = item.querySelector('.icon-badge-preview');
+            if (badge) badge.style.background = color;
+        }
+        document.getElementById('mrh-pa-pictos-json').value = JSON.stringify(mrhPaCurrentPictos);
+    }
+}
+
+function mrhPaEditIconBorderColor(idx, color) {
+    if (mrhPaCurrentPictos[idx]) {
+        mrhPaCurrentPictos[idx].bordercolor = color;
+        var item = document.querySelector('.mrh-pa-icon-item[data-idx="' + idx + '"]');
+        if (item) {
+            var badge = item.querySelector('.icon-badge-preview');
+            if (badge) badge.style.borderColor = color;
+        }
+        document.getElementById('mrh-pa-pictos-json').value = JSON.stringify(mrhPaCurrentPictos);
+    }
+}
+
 function mrhPaEditIconTitle(idx, title) {
     if (mrhPaCurrentPictos[idx]) {
-        mrhPaCurrentPictos[idx].title = title;
-        document.getElementById('mrh-pa-pictos-json').value = JSON.stringify(mrhPaCurrentPictos);
-    }
-}
-
-function mrhPaEditIconBg(idx, bgcolor) {
-    if (mrhPaCurrentPictos[idx]) {
-        mrhPaCurrentPictos[idx].bgcolor = bgcolor;
-        var item = document.querySelector('.mrh-pa-icon-item[data-idx="' + idx + '"]');
-        if (item) {
-            var preview = item.querySelector('.icon-badge-preview');
-            if (preview) preview.style.background = bgcolor;
-        }
-        document.getElementById('mrh-pa-pictos-json').value = JSON.stringify(mrhPaCurrentPictos);
-    }
-}
-
-function mrhPaEditIconBorder(idx, bordercolor) {
-    if (mrhPaCurrentPictos[idx]) {
-        mrhPaCurrentPictos[idx].bordercolor = bordercolor;
-        var item = document.querySelector('.mrh-pa-icon-item[data-idx="' + idx + '"]');
-        if (item) {
-            var preview = item.querySelector('.icon-badge-preview');
-            if (preview) preview.style.borderColor = bordercolor;
-        }
+        mrhPaCurrentPictos[idx].title = title.trim();
         document.getElementById('mrh-pa-pictos-json').value = JSON.stringify(mrhPaCurrentPictos);
     }
 }
@@ -1056,25 +948,32 @@ function mrhPaAddIconFromLibrary(iconClass, style) {
             break;
         }
     }
-    
+
     if (existIdx >= 0) {
         mrhPaCurrentPictos.splice(existIdx, 1);
     } else {
-        var title = document.getElementById('mrh-pa-add-title').value.trim() || iconClass.replace('fa-', '').replace(/-/g, ' ');
+        var title = document.getElementById('mrh-pa-add-title').value.trim();
         var color = document.getElementById('mrh-pa-add-color').value || '#333333';
         var sizeVal = parseInt(document.getElementById('mrh-pa-add-size').value) || 16;
-        
+
+        var bgColorEl = document.getElementById('mrh-pa-add-bgcolor');
+        var bdColorEl = document.getElementById('mrh-pa-add-bordercolor');
+        var bgcolor = bgColorEl ? bgColorEl.value : '#f1f5f9';
+        var bordercolor = bdColorEl ? bdColorEl.value : '#dddddd';
+
         mrhPaCurrentPictos.push({
             icon: iconClass,
             color: color,
             size: sizeVal + 'px',
             title: title,
-            style: style
+            style: style,
+            bgcolor: bgcolor,
+            bordercolor: bordercolor
         });
-        
+
         document.getElementById('mrh-pa-add-title').value = '';
     }
-    
+
     mrhPaRenderIcons();
 }
 
@@ -1084,7 +983,7 @@ function mrhPaAddIconFromLibrary(iconClass, style) {
 function mrhPaBuildLibrary() {
     var grid = document.getElementById('mrh-pa-icon-library-grid');
     if (!grid) return;
-    
+
     var html = '';
     var visibleCount = 0;
     for (var i = 0; i < mrhPaAllIcons.length; i++) {
@@ -1094,11 +993,11 @@ function mrhPaBuildLibrary() {
         var name = iconName.replace('fa-', '');
         var hasStyle = styles.indexOf(mrhPaCurrentStyle) !== -1;
         if (!hasStyle && mrhPaCurrentStyle !== 'all') continue;
-        
+
         var faPrefix = mrhPaCurrentStyle === 'brands' ? 'fa-brands' : (mrhPaCurrentStyle === 'regular' ? 'fa-regular' : 'fa-solid');
         if (mrhPaCurrentStyle === 'all') faPrefix = styles.indexOf('solid') !== -1 ? 'fa-solid' : (styles.indexOf('regular') !== -1 ? 'fa-regular' : 'fa-brands');
         var styleTag = styles.join(',');
-        
+
         html += '<div class="mrh-pa-icon-lib-btn" data-icon="' + iconName + '" data-name="' + name + '" data-styles="' + styleTag + '" onclick="mrhPaAddIconFromLibrary(\'' + iconName + '\', \'' + (mrhPaCurrentStyle === 'all' ? 'solid' : mrhPaCurrentStyle) + '\')">' +
             '<span class="' + faPrefix + ' ' + iconName + '"></span>' +
             '<span class="icon-name">' + name + '</span>' +
@@ -1159,14 +1058,14 @@ function mrhPaUpdateLibrarySelection() {
 function mrhPaQuickPick(el) {
     var iconVal = el.getAttribute('data-icon');
     var style = el.getAttribute('data-style') || 'solid';
-    
+
     var titleInput = el.querySelector('.qp-title-input');
     var colorInput = el.querySelector('.qp-color');
     var sizeInput = el.querySelector('.qp-size-input');
     var title = titleInput ? titleInput.value.trim() : (el.getAttribute('data-title') || '');
     var color = colorInput ? colorInput.value : (el.getAttribute('data-color') || '#333333');
     var sizeNum = sizeInput ? parseInt(sizeInput.value) || 16 : 16;
-    
+
     // Check if already in current pictos
     var existIdx = -1;
     for (var i = 0; i < mrhPaCurrentPictos.length; i++) {
@@ -1176,19 +1075,26 @@ function mrhPaQuickPick(el) {
             break;
         }
     }
-    
+
     if (existIdx >= 0) {
         mrhPaCurrentPictos.splice(existIdx, 1);
     } else {
+        var bgColorEl = document.getElementById('mrh-pa-add-bgcolor');
+        var bdColorEl = document.getElementById('mrh-pa-add-bordercolor');
+        var bgcolor = bgColorEl ? bgColorEl.value : '#f1f5f9';
+        var bordercolor = bdColorEl ? bdColorEl.value : '#dddddd';
+
         mrhPaCurrentPictos.push({
             icon: iconVal,
             color: color,
             size: sizeNum + 'px',
             title: title,
-            style: style
+            style: style,
+            bgcolor: bgcolor,
+            bordercolor: bordercolor
         });
     }
-    
+
     mrhPaRenderIcons();
 }
 
@@ -1198,7 +1104,7 @@ function mrhPaQpEditTitle(input) {
     var iconVal = btn.getAttribute('data-icon');
     var newTitle = input.value.trim();
     btn.setAttribute('data-title', newTitle);
-    
+
     for (var i = 0; i < mrhPaCurrentPictos.length; i++) {
         var existing = (mrhPaCurrentPictos[i].icon || '').replace(/^fa[- ](?:solid|regular|brands|fw)\s*/g, '').replace(/^fa\s+/, '');
         if (existing === iconVal) {
@@ -1214,11 +1120,11 @@ function mrhPaQpEditColor(input) {
     if (!btn) return;
     var iconVal = btn.getAttribute('data-icon');
     var newColor = input.value;
-    
+
     var iconEl = btn.querySelector('[class*="fa-"]');
     if (iconEl) iconEl.style.color = newColor;
     btn.setAttribute('data-color', newColor);
-    
+
     for (var i = 0; i < mrhPaCurrentPictos.length; i++) {
         var existing = (mrhPaCurrentPictos[i].icon || '').replace(/^fa[- ](?:solid|regular|brands|fw)\s*/g, '').replace(/^fa\s+/, '');
         if (existing === iconVal) {
@@ -1234,7 +1140,7 @@ function mrhPaQpEditSize(input) {
     if (!btn) return;
     var iconVal = btn.getAttribute('data-icon');
     var newSize = (parseInt(input.value) || 16) + 'px';
-    
+
     for (var i = 0; i < mrhPaCurrentPictos.length; i++) {
         var existing = (mrhPaCurrentPictos[i].icon || '').replace(/^fa[- ](?:solid|regular|brands|fw)\s*/g, '').replace(/^fa\s+/, '');
         if (existing === iconVal) {
@@ -1256,7 +1162,7 @@ function mrhPaUpdateQuickPick() {
         }
         var isActive = !!matchedPicto;
         btns[i].classList.toggle('active', isActive);
-        
+
         if (isActive && matchedPicto) {
             var titleInput = btns[i].querySelector('.qp-title-input');
             var colorInput = btns[i].querySelector('.qp-color');
@@ -1278,16 +1184,16 @@ function mrhPaUpdateCupsPreview() {
     var preview = document.getElementById('mrh-pa-cups-preview');
     if (!preview) return;
     preview.innerHTML = '';
-    
+
     if (count <= 0) return;
-    
+
     var trophyCount = Math.min(count, 3);
     for (var i = 0; i < trophyCount; i++) {
         var span = document.createElement('span');
         span.className = 'fa-solid fa-trophy';
         preview.appendChild(span);
     }
-    
+
     if (count > 3) {
         var numSpan = document.createElement('span');
         numSpan.className = 'cup-number';
@@ -1303,12 +1209,12 @@ function mrhPaApplyPreset(preset) {
     document.querySelectorAll('.mrh-pa-preset-tab').forEach(function(t) { t.classList.remove('active'); });
     var tab = document.querySelector('.mrh-pa-preset-tab[data-preset="'+preset+'"]');
     if (tab) tab.classList.add('active');
-    
+
     var panels = document.querySelectorAll('.mrh-pa-lang-panel');
     panels.forEach(function(panel) {
         var genderSel = panel.querySelector('select[data-field="gender"]');
         var flowerSel = panel.querySelector('select[data-field="flowering_type"]');
-        
+
         if (preset === 'feminized') {
             if (genderSel) genderSel.value = 'feminized';
             if (flowerSel) flowerSel.value = 'photoperiod';
@@ -1366,7 +1272,7 @@ function mrhPaAiFill(productsId) {
     if (!statusEl) return;
     statusEl.style.display = 'inline';
     statusEl.innerHTML = '<span class="fa fa-spinner fa-spin"></span> KI analysiert Beschreibung...';
-    
+
     var xhr = new XMLHttpRequest();
     xhr.open('POST', 'mrh_product_attributes.php?action=ai_fill&products_id=' + productsId, true);
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
@@ -1376,13 +1282,13 @@ function mrhPaAiFill(productsId) {
                 try {
                     var data = JSON.parse(xhr.responseText);
                     if (data.success) {
-                        statusEl.innerHTML = '<span style="color:green"><span class="fa fa-check"></span> ' + 
+                        statusEl.innerHTML = '<span style="color:green"><span class="fa fa-check"></span> ' +
                             (data.message || 'Erfolgreich!') + '</span>';
                         if (data.attributes) {
                             mrhPaFillFields(data.attributes);
                         }
                     } else {
-                        statusEl.innerHTML = '<span style="color:red"><span class="fa fa-times"></span> ' + 
+                        statusEl.innerHTML = '<span style="color:red"><span class="fa fa-times"></span> ' +
                             (data.message || 'Fehler') + '</span>';
                     }
                 } catch(e) {
@@ -1399,18 +1305,18 @@ function mrhPaAiFill(productsId) {
 function mrhPaFillFields(attrs) {
     for (var langId in attrs) {
         var langAttrs = attrs[langId];
-        
+
         if (langAttrs.is_seed !== undefined) {
             var seedEl = document.getElementById('mrh_pa_is_seed');
             if (seedEl) { seedEl.value = langAttrs.is_seed ? '1' : '0'; mrhPaHighlight(seedEl); }
         }
-        
+
         for (var field in langAttrs) {
             if (field === 'custom_fields' || field === 'is_seed' || field === 'ai_confidence' || field === 'pictos' || field === 'cannabis_cups') continue;
             var el = document.getElementById('mrh_pa_' + langId + '_' + field);
             if (el) { el.value = langAttrs[field]; mrhPaHighlight(el); }
         }
-        
+
         if (langAttrs.custom_fields && Array.isArray(langAttrs.custom_fields)) {
             var container = document.getElementById('mrh-pa-custom-' + langId);
             if (container) {
@@ -1444,7 +1350,7 @@ function mrhPaAutoDetectPreset() {
     var flowerSel = firstPanel.querySelector('select[data-field="flowering_type"]');
     var gender = genderSel ? genderSel.value : '';
     var flower = flowerSel ? flowerSel.value : '';
-    
+
     var preset = '';
     if (gender === 'feminized' && flower === 'autoflower') preset = 'autoflower';
     else if (gender === 'feminized' && flower === 'photoperiod') preset = 'feminized';
@@ -1452,7 +1358,7 @@ function mrhPaAutoDetectPreset() {
     else if (gender === 'regular' && flower === 'photoperiod') preset = 'regular';
     else if (gender === 'regular') preset = 'regular';
     else if (gender === 'feminized') preset = 'feminized';
-    
+
     document.querySelectorAll('.mrh-pa-preset-tab').forEach(function(t) { t.classList.remove('active'); });
     if (preset) {
         var tab = document.querySelector('.mrh-pa-preset-tab[data-preset="'+preset+'"]');
@@ -1480,12 +1386,12 @@ function mrhPaSaveAll() {
     var btn = document.getElementById('mrh-pa-save-btn');
     var status = document.getElementById('mrh-pa-save-status');
     if (!btn) return;
-    
+
     btn.disabled = true;
     btn.innerHTML = '<span class="fa-solid fa-spinner fa-spin"></span> Speichern...';
     status.innerHTML = '';
     status.style.color = '#666';
-    
+
     // Collect data
     var payload = {
         products_id: mrhPaProductsId,
@@ -1495,15 +1401,15 @@ function mrhPaSaveAll() {
         field_order: mrhPaGetFieldOrder(),
         languages: {}
     };
-    
+
     // Collect per-language data
     var panels = document.querySelectorAll('.mrh-pa-lang-panel');
     panels.forEach(function(panel) {
         var langId = panel.id.replace('mrh-pa-lang-', '');
         if (!langId) return;
-        
+
         var langData = {};
-        
+
         // Standard fields
         panel.querySelectorAll('.mrh-pa-input').forEach(function(input) {
             var field = input.getAttribute('data-field');
@@ -1511,7 +1417,7 @@ function mrhPaSaveAll() {
                 langData[field] = input.value;
             }
         });
-        
+
         // Custom fields
         var customFields = [];
         panel.querySelectorAll('.mrh-pa-custom-row').forEach(function(row) {
@@ -1526,10 +1432,10 @@ function mrhPaSaveAll() {
         });
         // Always send custom array — empty array tells server to clear DB
         langData.custom = customFields;
-        
+
         payload.languages[langId] = langData;
     });
-    
+
     // Send AJAX
     var xhr = new XMLHttpRequest();
     xhr.open('POST', 'mrh_product_attributes.php?action=save_product', true);
@@ -1538,7 +1444,7 @@ function mrhPaSaveAll() {
         if (xhr.readyState === 4) {
             btn.disabled = false;
             btn.innerHTML = '<span class="fa-solid fa-floppy-disk"></span> MRH Eigenschaften speichern';
-            
+
             if (xhr.status === 200) {
                 try {
                     var data = JSON.parse(xhr.responseText);
@@ -1659,13 +1565,13 @@ function mrhPaSyncFieldOrder(sourcePanel) {
     sourcePanel.querySelectorAll('.mrh-pa-field-row[data-field-key]').forEach(function(row) {
         order.push(row.getAttribute('data-field-key'));
     });
-    
+
     // Apply to all other panels
     document.querySelectorAll('.mrh-pa-lang-panel').forEach(function(panel) {
         if (panel === sourcePanel) return;
         var container = panel;
         var firstCustom = panel.querySelector('.mrh-pa-custom-fields');
-        
+
         order.forEach(function(fieldKey) {
             var row = panel.querySelector('.mrh-pa-field-row[data-field-key="' + fieldKey + '"]');
             if (row && firstCustom) {
@@ -1696,7 +1602,6 @@ document.addEventListener('DOMContentLoaded', function() {
     mrhPaRenderIcons();
     mrhPaBuildLibrary();
     mrhPaAutoDetectPreset();
-    mrhPaUpdateAutoBadges();
     mrhPaUpdateCupsPreview();
     mrhPaInitFieldDragDrop();
     mrhPaInitAllCustomFieldDnD();
