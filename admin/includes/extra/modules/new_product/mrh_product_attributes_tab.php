@@ -5,6 +5,11 @@
  *
  * Injects the "Eigenschaften (MRH)" tab into the product edit form.
  *
+ * Features v1.7.0:
+ * - Standardfelder bei neuen Produkten ausgeblendet (leerer Tab)
+ * - Felder werden sichtbar wenn KI befuellt oder Preset gewaehlt wird
+ * - Bereits gespeicherte Felder bleiben beim Laden erhalten
+ *
  * Features v1.6.0:
  * - Nur aktive Sprachen anzeigen (WHERE status = 1)
  * - Custom Fields synchron in allen Sprachen hinzufuegen/loeschen
@@ -499,13 +504,19 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
             <div class="mrh-pa-lang-panel <?php echo $idx === 0 ? 'active' : ''; ?>"
                  id="mrh-pa-lang-<?php echo $lid; ?>">
 
+                <?php
+                    // Determine if this is a new product (no saved data yet)
+                    $mrh_pa_is_new_product = empty($mrh_pa_all_attrs);
+                ?>
                 <?php foreach ($mrh_pa_fields as $field_key => $field_def): ?>
                     <?php
                         $row_class = '';
                         if ($field_def['priority'] === 'prio') $row_class = 'priority';
                         elseif ($field_def['priority'] === 'alt') $row_class = 'alt-priority';
+                        // For new products: hide standard fields (they exist in DOM for KI/Preset to fill)
+                        $hide_field = $mrh_pa_is_new_product ? 'display:none;' : '';
                     ?>
-                    <div class="mrh-pa-field-row <?php echo $row_class; ?>" draggable="true" data-field-key="<?php echo $field_key; ?>">
+                    <div class="mrh-pa-field-row <?php echo $row_class; ?>" draggable="true" data-field-key="<?php echo $field_key; ?>" style="<?php echo $hide_field; ?>">
                         <span class="field-drag-handle" title="Ziehen zum Sortieren">&#9776;</span>
                         <div class="mrh-pa-field-label">
                             <?php echo $field_def['label']; ?>
@@ -1220,6 +1231,11 @@ function mrhPaApplyPreset(preset) {
 
     var panels = document.querySelectorAll('.mrh-pa-lang-panel');
     panels.forEach(function(panel) {
+        // When a preset is applied, show ALL standard field rows (they may be hidden for new products)
+        panel.querySelectorAll('.mrh-pa-field-row[data-field-key]').forEach(function(row) {
+            row.style.display = '';
+        });
+
         var genderSel = panel.querySelector('select[data-field="gender"]');
         var flowerSel = panel.querySelector('select[data-field="flowering_type"]');
 
@@ -1347,7 +1363,15 @@ function mrhPaFillFields(attrs) {
         for (var field in langAttrs) {
             if (field === 'custom_fields' || field === 'is_seed' || field === 'ai_confidence' || field === 'pictos' || field === 'cannabis_cups') continue;
             var el = document.getElementById('mrh_pa_' + langId + '_' + field);
-            if (el) { el.value = langAttrs[field]; mrhPaHighlight(el); }
+            if (el) {
+                el.value = langAttrs[field];
+                mrhPaHighlight(el);
+                // Show the field row if it was hidden (new product) and has a value
+                if (langAttrs[field] && langAttrs[field] !== '') {
+                    var fieldRow = el.closest('.mrh-pa-field-row');
+                    if (fieldRow) fieldRow.style.display = '';
+                }
+            }
         }
 
         if (langAttrs.custom_fields && Array.isArray(langAttrs.custom_fields)) {
