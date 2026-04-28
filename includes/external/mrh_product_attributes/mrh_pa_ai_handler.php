@@ -27,7 +27,7 @@ class MrhPaAiHandler {
         
         // Get product descriptions (all languages)
         $languages = [];
-        $lang_q = xtc_db_query("SELECT languages_id, code, name FROM languages ORDER BY sort_order");
+        $lang_q = xtc_db_query("SELECT languages_id, code, name FROM languages WHERE status = 1 ORDER BY sort_order");
         while ($l = xtc_db_fetch_array($lang_q)) {
             $languages[$l['languages_id']] = $l;
         }
@@ -169,6 +169,29 @@ class MrhPaAiHandler {
                         // Fallback: copy German values
                         $trans_data = array_merge($trans_data, $to_translate);
                     }
+                }
+                
+                // Custom fields: translate labels+values to target language
+                if (!empty($save_data['custom_fields']) && is_array($save_data['custom_fields'])) {
+                    $cf_to_translate = [];
+                    foreach ($save_data['custom_fields'] as $cf_idx => $cf) {
+                        if (!empty($cf['label'])) $cf_to_translate['cf_label_' . $cf_idx] = $cf['label'];
+                        if (!empty($cf['value'])) $cf_to_translate['cf_value_' . $cf_idx] = $cf['value'];
+                    }
+                    if (!empty($cf_to_translate)) {
+                        $cf_trans_result = self::translateFields($api_key, $model, $base_url, $cf_to_translate, $lang['code']);
+                        $cf_translated = $cf_trans_result['success'] ? $cf_trans_result['data'] : $cf_to_translate;
+                    } else {
+                        $cf_translated = [];
+                    }
+                    $trans_custom = [];
+                    foreach ($save_data['custom_fields'] as $cf_idx => $cf) {
+                        $trans_custom[] = [
+                            'label' => $cf_translated['cf_label_' . $cf_idx] ?? ($cf['label'] ?? ''),
+                            'value' => $cf_translated['cf_value_' . $cf_idx] ?? ($cf['value'] ?? ''),
+                        ];
+                    }
+                    $trans_data['custom_fields'] = $trans_custom;
                 }
                 
                 $trans_data['ai_confidence'] = $save_data['ai_confidence'] ?? 0.7;

@@ -5,6 +5,13 @@
  *
  * Injects the "Eigenschaften (MRH)" tab into the product edit form.
  *
+ * Features v1.6.0:
+ * - Nur aktive Sprachen anzeigen (WHERE status = 1)
+ * - Custom Fields synchron in allen Sprachen hinzufuegen/loeschen
+ * - Label-Sync: Feldname wird in allen Sprachen gleichzeitig aktualisiert
+ * - KI-Befuellung: custom_fields werden in alle Sprachen uebersetzt
+ * - data-sync-idx fuer Sprach-uebergreifende Feld-Zuordnung
+ *
  * Features v1.5.0:
  * - Titel-Feld editierbar in Icon-Liste (Inline-Input statt statischer Text)
  * - Leerer Titel = kein Text neben Icon im Frontend
@@ -55,7 +62,7 @@ if ($mrh_pa_products_id > 0 && class_exists('MrhProductAttributes')) {
 
 // Get languages
 $mrh_pa_languages = [];
-$mrh_pa_lang_q = xtc_db_query("SELECT languages_id, name, code, image, directory FROM languages ORDER BY sort_order");
+$mrh_pa_lang_q = xtc_db_query("SELECT languages_id, name, code, image, directory FROM languages WHERE status = 1 ORDER BY sort_order");
 while ($mrh_pa_lang_row = xtc_db_fetch_array($mrh_pa_lang_q)) {
     $mrh_pa_languages[] = $mrh_pa_lang_row;
 }
@@ -576,13 +583,14 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
                     }
                     $custom = $custom_filtered;
                     foreach ($custom as $ci => $cf): ?>
-                        <div class="mrh-pa-field-row mrh-pa-custom-row" draggable="true">
+                        <div class="mrh-pa-field-row mrh-pa-custom-row" draggable="true" data-sync-idx="existing_<?php echo $ci; ?>">
                             <span class="mrh-pa-field-drag" title="Drag zum Sortieren">&#9776;</span>
                             <div class="mrh-pa-field-input" style="width:180px;flex:none;">
                                 <input type="text"
                                        name="mrh_pa[<?php echo $lid; ?>][custom][<?php echo $ci; ?>][label]"
                                        value="<?php echo htmlspecialchars($cf['label'] ?? ''); ?>"
-                                       placeholder="Feldname">
+                                       placeholder="Feldname"
+                                       oninput="mrhPaSyncCustomLabel('existing_<?php echo $ci; ?>', this.value)">
                             </div>
                             <div class="mrh-pa-field-input">
                                 <input type="text"
@@ -591,7 +599,7 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
                                        placeholder="Wert">
                             </div>
                             <button type="button" class="mrh-pa-btn mrh-pa-btn-secondary"
-                                    onclick="this.closest('.mrh-pa-custom-row').remove()"
+                                    onclick="mrhPaRemoveCustomField('existing_<?php echo $ci; ?>')"
                                     title="Entfernen">&times;</button>
                         </div>
                     <?php endforeach; ?>
@@ -1243,25 +1251,50 @@ function mrhPaSwitchLang(langId, el) {
 }
 
 // ============================================================
-// CUSTOM FIELDS
+// CUSTOM FIELDS (v1.5.0 - Sprach-Synchronisation)
 // ============================================================
 var mrhPaCustomCounter = <?php echo max(count($custom ?? []), 0) + 10; ?>;
-function mrhPaAddCustomField(langId) {
-    var container = document.getElementById('mrh-pa-custom-' + langId);
-    if (!container) return;
+var mrhPaActiveLangIds = [<?php echo implode(',', array_column($mrh_pa_languages, 'languages_id')); ?>];
+
+function mrhPaAddCustomField(triggerLangId) {
     var idx = mrhPaCustomCounter++;
-    var row = document.createElement('div');
-    row.className = 'mrh-pa-field-row mrh-pa-custom-row';
-    row.setAttribute('draggable', 'true');
-    row.innerHTML = '<span class="mrh-pa-field-drag" title="Drag zum Sortieren">&#9776;</span>' +
-        '<div class="mrh-pa-field-input" style="width:180px;flex:none;">' +
-        '<input type="text" name="mrh_pa['+langId+'][custom]['+idx+'][label]" placeholder="Feldname">' +
-        '</div><div class="mrh-pa-field-input">' +
-        '<input type="text" name="mrh_pa['+langId+'][custom]['+idx+'][value]" placeholder="Wert">' +
-        '</div><button type="button" class="mrh-pa-btn mrh-pa-btn-secondary" onclick="this.closest(\'.mrh-pa-custom-row\').remove()" title="Entfernen">&times;</button>';
-    container.appendChild(row);
-    // Init DnD for the new row
-    mrhPaInitCustomFieldDnD(row);
+    // Add field to ALL language panels (sync)
+    for (var li = 0; li < mrhPaActiveLangIds.length; li++) {
+        var langId = mrhPaActiveLangIds[li];
+        var container = document.getElementById('mrh-pa-custom-' + langId);
+        if (!container) continue;
+        var row = document.createElement('div');
+        row.className = 'mrh-pa-field-row mrh-pa-custom-row';
+        row.setAttribute('draggable', 'true');
+        row.setAttribute('data-sync-idx', idx);
+        row.innerHTML = '<span class="mrh-pa-field-drag" title="Drag zum Sortieren">&#9776;</span>' +
+            '<div class="mrh-pa-field-input" style="width:180px;flex:none;">' +
+            '<input type="text" name="mrh_pa['+langId+'][custom]['+idx+'][label]" placeholder="Feldname" oninput="mrhPaSyncCustomLabel('+idx+', this.value)">' +
+            '</div><div class="mrh-pa-field-input">' +
+            '<input type="text" name="mrh_pa['+langId+'][custom]['+idx+'][value]" placeholder="Wert">' +
+            '</div><button type="button" class="mrh-pa-btn mrh-pa-btn-secondary" onclick="mrhPaRemoveCustomField('+idx+')" title="Entfernen">&times;</button>';
+        container.appendChild(row);
+        mrhPaInitCustomFieldDnD(row);
+    }
+}
+
+// Sync label across all language panels when edited
+function mrhPaSyncCustomLabel(syncIdx, newLabel) {
+    var rows = document.querySelectorAll('.mrh-pa-custom-row[data-sync-idx="' + syncIdx + '"]');
+    for (var i = 0; i < rows.length; i++) {
+        var labelInput = rows[i].querySelector('input[name*="[label]"]');
+        if (labelInput && labelInput !== document.activeElement) {
+            labelInput.value = newLabel;
+        }
+    }
+}
+
+// Remove custom field from ALL language panels
+function mrhPaRemoveCustomField(syncIdx) {
+    var rows = document.querySelectorAll('.mrh-pa-custom-row[data-sync-idx="' + syncIdx + '"]');
+    for (var i = 0; i < rows.length; i++) {
+        rows[i].remove();
+    }
 }
 
 // ============================================================
@@ -1323,16 +1356,17 @@ function mrhPaFillFields(attrs) {
                 container.innerHTML = '';
                 for (var i = 0; i < langAttrs.custom_fields.length; i++) {
                     var cf = langAttrs.custom_fields[i];
-                    mrhPaCustomCounter++;
+                    var syncIdx = 'ai_' + mrhPaCustomCounter++;
                     var row = document.createElement('div');
                     row.className = 'mrh-pa-field-row mrh-pa-custom-row';
                     row.setAttribute('draggable', 'true');
+                    row.setAttribute('data-sync-idx', syncIdx);
                     row.innerHTML = '<span class="mrh-pa-field-drag" title="Drag zum Sortieren">&#9776;</span>' +
                         '<div class="mrh-pa-field-input" style="width:180px;flex:none;">' +
-                        '<input type="text" name="mrh_pa['+langId+'][custom]['+i+'][label]" value="' + mrhPaEsc(cf.label || '') + '" placeholder="Feldname">' +
+                        '<input type="text" name="mrh_pa['+langId+'][custom]['+i+'][label]" value="' + mrhPaEsc(cf.label || '') + '" placeholder="Feldname" oninput="mrhPaSyncCustomLabel(\'' + syncIdx + '\', this.value)">' +
                         '</div><div class="mrh-pa-field-input">' +
                         '<input type="text" name="mrh_pa['+langId+'][custom]['+i+'][value]" value="' + mrhPaEsc(cf.value || '') + '" placeholder="Wert">' +
-                        '</div><button type="button" class="mrh-pa-btn mrh-pa-btn-secondary" onclick="this.closest(\'.mrh-pa-custom-row\').remove()" title="Entfernen">&times;</button>';
+                        '</div><button type="button" class="mrh-pa-btn mrh-pa-btn-secondary" onclick="mrhPaRemoveCustomField(\'' + syncIdx + '\')" title="Entfernen">&times;</button>';
                     container.appendChild(row);
                     mrhPaInitCustomFieldDnD(row);
                     row.querySelectorAll('input').forEach(function(inp) { mrhPaHighlight(inp); });
