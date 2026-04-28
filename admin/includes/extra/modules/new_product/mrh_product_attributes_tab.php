@@ -507,14 +507,36 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
                 <?php
                     // Determine if this is a new product (no saved data yet)
                     $mrh_pa_is_new_product = empty($mrh_pa_all_attrs);
+                    // Determine is_seed status from first language attrs
+                    $mrh_pa_is_seed_val = 1; // default: seed
+                    if (!empty($mrh_pa_all_attrs)) {
+                        $first_lang_attrs = reset($mrh_pa_all_attrs);
+                        $mrh_pa_is_seed_val = (int)($first_lang_attrs['is_seed'] ?? 1);
+                    }
+                    // Seed-specific fields that should be hidden for Non-Seed products
+                    $mrh_pa_seed_only_fields = ['gender', 'flowering_type', 'type', 'thc', 'cbd',
+                        'cross_genetics', 'flowering_time', 'yield_indoor', 'harvest_time',
+                        'yield_outdoor', 'height_indoor', 'height_outdoor', 'climate', 'effect', 'taste'];
                 ?>
                 <?php foreach ($mrh_pa_fields as $field_key => $field_def): ?>
                     <?php
                         $row_class = '';
                         if ($field_def['priority'] === 'prio') $row_class = 'priority';
                         elseif ($field_def['priority'] === 'alt') $row_class = 'alt-priority';
-                        // For new products: hide standard fields (they exist in DOM for KI/Preset to fill)
-                        $hide_field = $mrh_pa_is_new_product ? 'display:none;' : '';
+                        // Check if field has a real value (not null, not empty string)
+                        $field_val = $attrs[$field_key] ?? null;
+                        $field_has_value = ($field_val !== null && $field_val !== '');
+                        // Hide field if:
+                        // 1. New product (no data in DB at all), OR
+                        // 2. Existing product but field has no value, OR
+                        // 3. Non-Seed product and field is seed-specific (unless it has a value)
+                        $is_seed_only = in_array($field_key, $mrh_pa_seed_only_fields);
+                        $hide_field = '';
+                        if ($mrh_pa_is_new_product) {
+                            $hide_field = 'display:none;';
+                        } elseif (!$field_has_value) {
+                            $hide_field = 'display:none;';
+                        }
                     ?>
                     <div class="mrh-pa-field-row <?php echo $row_class; ?>" draggable="true" data-field-key="<?php echo $field_key; ?>" style="<?php echo $hide_field; ?>">
                         <span class="field-drag-handle" title="Ziehen zum Sortieren">&#9776;</span>
