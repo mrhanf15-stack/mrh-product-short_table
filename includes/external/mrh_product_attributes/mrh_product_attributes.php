@@ -6,7 +6,7 @@
  * for structured product attributes (gender, THC, CBD, cross, etc.)
  *
  * @package MRH_Product_Attributes
- * @version 1.10.0
+ * @version 1.12.0
  */
 
 if (!defined('TABLE_CONFIGURATION')) { return; }
@@ -14,7 +14,7 @@ if (!defined('TABLE_CONFIGURATION')) { return; }
 class MrhProductAttributes {
 
     /** @var string Module version */
-    const VERSION = '1.10.0';
+    const VERSION = '1.12.0';
 
     /** @var string DB table name */
     const TABLE = 'mrh_product_attributes';
@@ -261,8 +261,14 @@ class MrhProductAttributes {
         $fields_filled = 0;
 
         foreach ($allowed as $col) {
-            if (isset($data[$col])) {
+            // Use array_key_exists instead of isset to detect explicit NULL values
+            if (array_key_exists($col, $data)) {
                 $val = $data[$col];
+                // NULL value = field was removed/cleared → store as SQL NULL
+                if ($val === null) {
+                    $fields[$col] = null; // will be written as SQL NULL
+                    continue;
+                }
                 if ($col === 'custom_fields' && is_array($val)) {
                     $val = json_encode($val, JSON_UNESCAPED_UNICODE);
                 }
@@ -298,7 +304,13 @@ class MrhProductAttributes {
 
         foreach ($fields as $col => $val) {
             $cols[] = '`' . $col . '`';
-            if (is_int($val) || is_float($val)) {
+            if ($val === null) {
+                // Explicit NULL value
+                $vals[] = 'NULL';
+                if ($col !== 'products_id' && $col !== 'language_id') {
+                    $updates[] = '`' . $col . '` = NULL';
+                }
+            } elseif (is_int($val) || is_float($val)) {
                 $vals[] = $val;
                 if ($col !== 'products_id' && $col !== 'language_id') {
                     $updates[] = '`' . $col . '` = ' . $val;
@@ -477,6 +489,52 @@ class MrhProductAttributes {
         }
 
         // LISTING/BOX context: Always exactly 3 rows
+        // Phase 1 Non-Seeds: show top 3 custom fields (D&D order from backend) instead of Seeds fields
+        if (isset($attrs['is_seed']) && (int)$attrs['is_seed'] === 0) {
+            $cf_rows = [];
+
+            // 1. Custom fields from DB (already in D&D-saved order)
+            if (!empty($attrs['custom_fields_decoded']) && is_array($attrs['custom_fields_decoded'])) {
+                foreach ($attrs['custom_fields_decoded'] as $cf) {
+                    if (!empty($cf['value']) && count($cf_rows) < 3) {
+                        $cf_rows[] = '<tr class="custom"><td>' . htmlspecialchars($cf['label'] ?? '') . '</td><td>' . htmlspecialchars($cf['value']) . '</td></tr>';
+                    }
+                }
+            }
+
+            // 2. Fallback: also check standard fields in saved D&D order
+            if (count($cf_rows) < 3) {
+                $products_id = (int)($attrs['products_id'] ?? 0);
+                $ns_fields = [];
+                if ($products_id > 0) {
+                    $saved_order_json = self::getConfig('field_order_' . $products_id);
+                    if (!empty($saved_order_json)) {
+                        $ns_fields = json_decode($saved_order_json, true) ?: [];
+                    }
+                }
+                // Use all standard fields as fallback if no saved order
+                if (empty($ns_fields)) {
+                    $ns_fields = array_keys(self::STANDARD_FIELDS);
+                }
+                foreach ($ns_fields as $field) {
+                    if (count($cf_rows) >= 3) break;
+                    if (!empty($attrs[$field])) {
+                        $value = htmlspecialchars($attrs[$field]);
+                        if (in_array($field, ['gender', 'flowering_type', 'type', 'growing'])) {
+                            $value = self::translateSelectValue($field, $attrs[$field]);
+                        }
+                        $label = isset($field_labels[$field]) ? $field_labels[$field][0] : ucfirst($field);
+                        $tr_class = isset($field_labels[$field]) ? $field_labels[$field][5] : '';
+                        $cf_rows[] = '<tr class="' . htmlspecialchars($tr_class) . '"><td>' . htmlspecialchars($label) . '</td><td>' . $value . '</td></tr>';
+                    }
+                }
+            }
+
+            if (empty($cf_rows)) return '';
+            $class = 'mrh-attr-table mrh-attr-' . $context;
+            return '<table class="' . $class . ' tebals"><tbody>' . implode('', $cf_rows) . '</tbody></table>';
+        }
+
         $prio_fields = [
             ['key' => 'type',  'label_key' => 'type'],
             ['key' => 'thc',   'label_key' => 'thc'],
@@ -583,12 +641,16 @@ class MrhProductAttributes {
     public static function buildBadgeHTML($attrs) {
         if (empty($attrs)) return '';
 
+        // Phase 1 Non-Seeds: Determine if this is a non-seed product
+        $is_non_seed = (isset($attrs['is_seed']) && (int)$attrs['is_seed'] === 0);
+
         $badges = [];
         $gender = $attrs['gender'] ?? '';
         $flowering = $attrs['flowering_type'] ?? '';
 
         // 1. Gender badge – uses global badge config from DB
-        if ($gender === 'feminized') {
+        //    Skip for non-seed products (gender is seed-specific)
+        if (!$is_non_seed && $gender === 'feminized') {
             $fem_cfg = self::getBadgeConfig('gender_feminized');
             $show = !empty($fem_cfg['show_text']);
             if ($fem_cfg['is_svg']) {
@@ -596,7 +658,7 @@ class MrhProductAttributes {
             } else {
                 $badges[] = self::badgeSpan('fem', $fem_cfg['icon'], self::translateSelectValue('gender', 'feminized'), $fem_cfg['style'], $show);
             }
-        } elseif ($gender === 'regular') {
+        } elseif (!$is_non_seed && $gender === 'regular') {
             $reg_cfg = self::getBadgeConfig('gender_regular');
             $show = !empty($reg_cfg['show_text']);
             if ($reg_cfg['is_svg']) {
@@ -604,7 +666,7 @@ class MrhProductAttributes {
             } else {
                 $badges[] = self::badgeSpan('reg', $reg_cfg['icon'], self::translateSelectValue('gender', 'regular'), $reg_cfg['style'], $show);
             }
-        } elseif ($gender === 'autoflower') {
+        } elseif (!$is_non_seed && $gender === 'autoflower') {
             $fem_cfg = self::getBadgeConfig('gender_feminized');
             $show = !empty($fem_cfg['show_text']);
             if ($fem_cfg['is_svg']) {
@@ -617,11 +679,12 @@ class MrhProductAttributes {
         // 2. Flowering type badge
         //    - Autoflowering: Icon badge (fa-gauge-high)
         //    - Photoperiodisch: Sun Icon badge (fa-sun)
-        if ($flowering === 'autoflower') {
+        //    Skip for non-seed products (flowering type is seed-specific)
+        if (!$is_non_seed && $flowering === 'autoflower') {
             $auto_cfg = self::getBadgeConfig('flowering_autoflower');
             $show = !empty($auto_cfg['show_text']);
             $badges[] = self::badgeSpan('auto', $auto_cfg['icon'], self::translateSelectValue('flowering_type', 'autoflower'), $auto_cfg['style'], $show);
-        } elseif ($flowering === 'photoperiod') {
+        } elseif (!$is_non_seed && $flowering === 'photoperiod') {
             $photo_cfg = self::getBadgeConfig('flowering_photoperiod');
             $show = !empty($photo_cfg['show_text']);
             $badges[] = self::badgeSpan('photo', $photo_cfg['icon'], self::translateSelectValue('flowering_type', 'photoperiod'), $photo_cfg['style'], $show);
@@ -679,8 +742,23 @@ class MrhProductAttributes {
                     // Remove legacy "fa " prefix if present
                     $icon_class = preg_replace('/^fa\s+/', '', $icon_class);
 
-                    // Skip icons that duplicate the gender/flowering badges
-                    if (in_array($icon_class, ['fa-venus', 'fa-mars', 'fa-bolt', 'fa-sun'])) continue;
+                    // Skip icons that duplicate system badges ONLY if the system badge was actually rendered
+                    // (v1.10.1: Don't skip if the picto has custom bgcolor/bordercolor styling)
+                    $is_custom_styled = !empty($picto['bgcolor']) || !empty($picto['bordercolor']);
+                    if (!$is_custom_styled && in_array($icon_class, ['fa-venus', 'fa-mars', 'fa-bolt', 'fa-sun'])) {
+                        // Check if the corresponding system badge exists in $badges
+                        $system_badge_exists = false;
+                        foreach ($badges as $existing) {
+                            if (($icon_class === 'fa-venus' && strpos($existing, 'mrh-badge-fem') !== false) ||
+                                ($icon_class === 'fa-mars' && strpos($existing, 'mrh-badge-reg') !== false) ||
+                                ($icon_class === 'fa-bolt' && strpos($existing, 'mrh-badge-auto') !== false) ||
+                                ($icon_class === 'fa-sun' && strpos($existing, 'mrh-badge-photo') !== false)) {
+                                $system_badge_exists = true;
+                                break;
+                            }
+                        }
+                        if ($system_badge_exists) continue;
+                    }
 
                     // Determine FA style prefix (FA7: fa-solid, fa-regular, fa-brands)
                     $fa_style = $picto['style'] ?? 'solid';

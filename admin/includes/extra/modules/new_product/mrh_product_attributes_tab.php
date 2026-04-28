@@ -569,7 +569,7 @@ $mrh_pa_badge_base = 'templates/tpl_mrh_2026/img/badges/';
                                        placeholder="<?php echo htmlspecialchars($field_def['label']); ?>">
                             <?php endif; ?>
                         </div>
-                        <button type="button" class="field-remove-btn" onclick="this.closest('.mrh-pa-field-row').style.display='none'; this.closest('.mrh-pa-field-row').querySelectorAll('input,select').forEach(function(e){e.disabled=true;})" title="Feld ausblenden">&times;</button>
+                        <button type="button" class="field-remove-btn" onclick="mrhPaRemoveStandardField(this, '<?php echo $field_key; ?>')" title="Feld ausblenden">&times;</button>
                     </div>
                 <?php endforeach; ?>
 
@@ -1289,11 +1289,33 @@ function mrhPaSwitchLang(langId, el) {
 }
 
 // ============================================================
+// Language IDs for sync (used by all sync functions below)
+// ============================================================
+var mrhPaActiveLangIds = [<?php echo implode(',', array_column($mrh_pa_languages, 'languages_id')); ?>];
+
+// ============================================================
+// STANDARD FIELD REMOVE (sync across all language tabs)
+// ============================================================
+function mrhPaRemoveStandardField(btn, fieldKey) {
+    // Hide and disable in ALL language panels, not just the current one
+    for (var li = 0; li < mrhPaActiveLangIds.length; li++) {
+        var langId = mrhPaActiveLangIds[li];
+        var panel = document.getElementById('mrh-pa-lang-' + langId);
+        if (!panel) continue;
+        var rows = panel.querySelectorAll('.mrh-pa-field-row[data-field-key="' + fieldKey + '"]');
+        rows.forEach(function(row) {
+            row.style.display = 'none';
+            row.querySelectorAll('input, select').forEach(function(el) {
+                el.disabled = true;
+            });
+        });
+    }
+}
+
+// ============================================================
 // CUSTOM FIELDS (v1.5.0 - Sprach-Synchronisation)
 // ============================================================
 var mrhPaCustomCounter = <?php echo max(count($custom ?? []), 0) + 10; ?>;
-var mrhPaActiveLangIds = [<?php echo implode(',', array_column($mrh_pa_languages, 'languages_id')); ?>];
-
 function mrhPaAddCustomField(triggerLangId) {
     var idx = mrhPaCustomCounter++;
     // Add field to ALL language panels (sync)
